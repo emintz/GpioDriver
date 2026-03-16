@@ -1,0 +1,70 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.ooarchitect</groupId>
+    <artifactId>java-gpio-client</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>Java GPIO Client</name>
+
+
+
+    <build>
+        <plugins>
+            <!-- Configure Maven Compiler Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.15.0</version> <!-- Use the latest plugin version -->
+                <configuration>
+                    <!-- Set source and target Java version -->
+                    <source>25</source>
+                    <target>25</target>
+                    <!-- Optional: Set release version (Java 9+) for stricter checks -->
+                    <release>25</release>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <!-- Source: https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-compiler-plugin -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.21.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/org.mockito/mockito-junit-jupiter -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>5.21.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>6.1.0-M1</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/com.google.guava/guava -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.5.0-jre</version>
+            <scope>compile</scope>
+        </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/com.google.truth/truth -->
+        <dependency>
+            <groupId>com.google.truth</groupId>
+            <artifactId>truth</artifactId>
+            <version>1.4.5</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>
