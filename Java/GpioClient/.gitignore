@@ -28,3 +28,11 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Compiler Output ##
+/target
+/.idea
+/GpioClient.iml
+/..gitignore.swp
+
+
