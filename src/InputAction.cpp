@@ -46,6 +46,7 @@ static void dump_status(const StatusMessage& status) {
   dump_hex(0xFF);
   dump_hex(status.pin_number_);
   dump_hex(static_cast<uint8_t>(status.status_));
+  dump_hex(static_cast<uint8_t>(status.scope_));
   dump_hex(status.side_data_);
   dump_hex(0x7F);
   Serial.print('>');

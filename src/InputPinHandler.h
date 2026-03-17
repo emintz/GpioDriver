@@ -229,12 +229,14 @@ private:
    * @param side_data status-dependent data, zero if none.
    */
   void send_status(
-      gpio_num_t pin_number,
       IOStatus status,
+      StatusScope scope,
+      gpio_num_t pin_number,
       uint8_t side_data = 0) {
     StatusMessage message = {
-        .pin_number_ = pin_number,
         .status_ = status,
+        .scope_ = scope,
+        .pin_number_ = pin_number,
         .side_data_ = side_data,
     };
 

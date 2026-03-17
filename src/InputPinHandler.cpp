@@ -60,15 +60,19 @@ void InputPinHandler::open_pin(
     gpio_num_t pin_number,
     InputPinHandler::PullMode mode) {
   if (in_use(pin_number)) {
-    send_status(pin_number, IOStatus::INVALID_STATE);
+    send_status(
+        IOStatus::INVALID_STATE,
+        StatusScope::INPUT_SCOPE,
+        pin_number);
   } else {
     if (
         set_as_input(pin_number)
         && set_pull_mode(pin_number, mode)
         && start_pin_watch(pin_number)) {
       send_status(
+          IOStatus::OPEN_SUCCEEDED,
+          StatusScope::INPUT_SCOPE,
           pin_number,
-          IOStatus::OPEN_FOR_INPUT,
           static_cast<uint8_t>(gpio_get_level(pin_number)));
     }
   }
@@ -89,11 +93,17 @@ bool InputPinHandler::post_esp32_status(gpio_num_t pin_number, esp_err_t status)
     break;
   case ESP_ERR_INVALID_ARG:
     result = false;
-    send_status(pin_number, IOStatus::NO_SUCH_OUTPUT_PIN);
+    send_status(
+        IOStatus::NO_SUCH_OUTPUT_PIN,
+        StatusScope::INPUT_SCOPE,
+        pin_number );
     break;
   default:
     result = false;
-    send_status(pin_number, IOStatus::UNCATEGORIZED);
+    send_status(
+        IOStatus::INVALID_STATE,
+        StatusScope::INPUT_SCOPE,
+        pin_number);
     break;
   }
   return result;
@@ -132,7 +142,10 @@ bool InputPinHandler::start_pin_watch(gpio_num_t pin_number) {
       new InputPinHandler::InputPinManager(pin_number, *this));
   bool result = watched_pins_[pin_number]->start();
   if (!result) {
-    send_status(pin_number, IOStatus::OUTPUT_OPEN_FAILED);
+    send_status(
+        IOStatus::OPEN_FAILED,
+        StatusScope::OUTPUT_SCOPE,
+        pin_number);
   }
   return result;
 }

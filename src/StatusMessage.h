@@ -29,22 +29,33 @@
 #include <driver/gpio.h>
 
 /**
- * @brief Pin I/O operation status codes
+ * @brief Pin I/O operation status codes. Must match declarations
+ *        in `IOStatusCode.java`
  */
 enum class IOStatus {
   OK,                   /**< OK Everything is fine. */
-  OPEN_FOR_INPUT,       /**< OPEN_FOR_INPUT Pin has been opened for input. */
-  OPEN_FOR_OUTPUT,      /**< OPEN_FOR_OUTPUT Pin has been opened for output. */
-  OUTPUT_OPEN_FAILED,   /**< OUTPUT_OPEN_FAILED pin could not be opened for output. */
-  INPUT_OPEN_FAILED,    /**< INPUT_OPEN_FAILED pin could not be opened for input. */
-  NO_SUCH_OUTPUT_PIN,          /**< NO_SUCH_PIN Non-existant pin number */
+  CLOSE_SUCCEEDED,      /**< Pin successfully closed. */
+  CLOSE_FAILED,         /**< Pin could not be closed. */
+  OPEN_SUCCEEDED,       /**< Pin opened successfully I/O given by scope. */
+  OPEN_FAILED,          /**< OPEN_FAILED pin could not be opened. */
+  NO_SUCH_OUTPUT_PIN,   /**< NO_SUCH_PIN Non-existant pin number */
   LOST_INPUT,           /**< LOST_INPUT Input has been lost */
-  IN_USE_CANNOT_OUTPUT, /**< IN_USE_CANNOT_OUTPUT Cannot open for output because pin is being used. */
-  IN_USE_CANNOT_INPUT,  /**< IN_USE_CANNOT_INPUT Cannot open for input because the pin is in use. */
+  PIN_IN_USE,           /**< PIN_IN_USE Cannot open because pin is being used. */
   UNSUPPORTED,          /**< UNSUPPORTED The pin does not support the requested function. */
-  UNCATEGORIZED,        /**< UNCATEGORIZED Uncategorized error */
-  RESET,                /**< RESET, pin has been reset. */
+  RESET_FAILED,         /**< Pin or server could not be reset. */
+  RESET_SUCCEEDED,      /**< Pin or server reset succeeded. */
   INVALID_STATE,        /**< INVALID_STATE Internal driver failure */
+};
+
+/**
+ * @brief scope (i.e. applicability) of the status message. Must match
+ *        declarations in `StatusScope.java`
+ */
+enum class StatusScope {
+  INPUT_SCOPE,         /**< INPUT_SCOPE, applies to an input pin */           /**< INPUT_SCOPE */
+  OUTPUT_SCOPE,        /**< OUTPUT_SCOPE, applies to an output pin */         /**< OUTPUT_SCOPE */
+  INPUT_OUTPUT_SCOPE,  /**< INPUT_OUTPUT_SCOPE, applies to input and output *//**< INPUT_OUTPUT_SCOPE */
+  SERVER_SCOPE,        /**< SERVER_SCOPE, applies server-wide */              /**< SERVER_SCOPE */
 };
 
 
@@ -52,9 +63,10 @@ enum class IOStatus {
  * @brief Response to host request
  */
 struct StatusMessage {
+  IOStatus status_;        /**< Pin status */
+  StatusScope scope_;      /**< Scope (applicability) */
   gpio_num_t pin_number_;  /**< The affected pin number */
-  IOStatus status_;  /**< Pin status */
-  uint8_t side_data_;  /**< Status-specific data */
+  uint8_t side_data_;      /**< Status-specific data */
 };
 
 #endif /* STATUSMESSAGE_H_ */
