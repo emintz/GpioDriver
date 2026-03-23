@@ -28,10 +28,16 @@
 #ifndef INPUTACTION_H_
 #define INPUTACTION_H_
 
+#include "OutputPinHandler.h"
+
 #include <PullQueueHT.h>
 #include <StatusMessage.h>
 #include <TaskAction.h>
 #include <stdint.h>
+
+//-----------------------------------------------------------
+// Debugging support. Delete before putting in production. //
+//-----------------------------------------------------------
 
 /**
  * @brief Input activity processor: marshals status and value changes
@@ -40,6 +46,7 @@
 class InputAction : public TaskAction {
   PullQueueHT<uint8_t>& pin_change_queue_;
   PullQueueHT<StatusMessage>& status_queue_;
+  OutputPinHandler& output_handler_;
 
   /**
    * Process status queue messages until the queue is empty
@@ -57,7 +64,8 @@ public:
    */
   InputAction (
       PullQueueHT<uint8_t>& pin_change_queue,
-      PullQueueHT<StatusMessage>& status_queue);
+      PullQueueHT<StatusMessage>& status_queue,
+      OutputPinHandler& output_handler);
   virtual ~InputAction ();
 
   /**

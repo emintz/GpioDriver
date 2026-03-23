@@ -58,10 +58,10 @@ void InputPinHandler::end(void) {
 
 void InputPinHandler::open_pin(
     gpio_num_t pin_number,
-    InputPinHandler::PullMode mode) {
+    PullMode mode) {
   if (in_use(pin_number)) {
     send_status(
-        IOStatus::INVALID_STATE,
+        IOStatus::PIN_IN_USE,
         StatusScope::INPUT_SCOPE,
         pin_number);
   } else {
@@ -94,7 +94,7 @@ bool InputPinHandler::post_esp32_status(gpio_num_t pin_number, esp_err_t status)
   case ESP_ERR_INVALID_ARG:
     result = false;
     send_status(
-        IOStatus::NO_SUCH_OUTPUT_PIN,
+        IOStatus::NO_SUCH_PIN,
         StatusScope::INPUT_SCOPE,
         pin_number );
     break;
@@ -113,19 +113,19 @@ bool InputPinHandler::set_as_input(gpio_num_t pin_number) {
   return post_esp32_status(pin_number, gpio_set_direction(pin_number, GPIO_MODE_INPUT));
 }
 
-bool InputPinHandler::set_pull_mode(gpio_num_t pin_number, InputPinHandler::PullMode mode) {
+bool InputPinHandler::set_pull_mode(gpio_num_t pin_number, PullMode mode) {
   gpio_pull_mode_t esp32_pull_mode;
   switch (mode) {
-  case InputPinHandler::PullMode::UP:
+  case PullMode::UP:
     esp32_pull_mode = GPIO_PULLUP_ONLY;
     break;
-  case InputPinHandler::PullMode::DOWN:
+  case PullMode::DOWN:
     esp32_pull_mode = GPIO_PULLDOWN_ONLY;
     break;
-  case InputPinHandler::PullMode::BOTH:
+  case PullMode::BOTH:
     esp32_pull_mode = GPIO_PULLUP_PULLDOWN;
     break;
-  case InputPinHandler::PullMode::FLOAT:
+  case PullMode::FLOAT:
     esp32_pull_mode = GPIO_FLOATING;
     break;
   }

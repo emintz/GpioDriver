@@ -24,6 +24,7 @@
 #ifndef INPUTPINHANDLER_H_
 #define INPUTPINHANDLER_H_
 
+#include "PullMode.h"
 #include "StatusMessage.h"
 
 #include <GpioChangeDetector.h>
@@ -38,10 +39,17 @@
 /**
  * @brief Pin input handler
  *
- * The pin input handler manages the global input activity. Users
- * can open and close pins. When it opens or closes a pin, the handler
- * enqueues the operation results for transmission to the host. When
- * an open pin value changes, the handler enqueues a change notification.
+ * The pin input handler manages the global input activity, including
+ * opening and closing input pins. The handler maintains a `vector`
+ * of open pins indexed by pin number, with open pins represented by
+ * `InputPinManager` instances and closed pins by `NULL`.
+ *
+ * The pin input handler binds itself to the low level interrupt
+ * handler. The handler, in turn, forwards pin changes to
+ * `InputPinHandler::pin_changed`.
+ *
+ * Because `InputPinHandler` manages global state, the server must
+ * create exactly one instance.
  */
 class InputPinHandler final {
 
@@ -53,16 +61,6 @@ class InputPinHandler final {
     RUNNING,  /**< Handler is running */
   };
 
-public:
-  /**
-   * Pullup/Pulldown resistor modes
-   */
-  enum class PullMode {
-    UP,     /**< Pull the input to Vcc */
-    DOWN,   /**< Pull the input to ground */
-    BOTH,   /**< Both (but why?) */
-    FLOAT,  /**< Neither pull up or pull down resistor */
-  };
 private:
 
   /**
@@ -200,7 +198,7 @@ private:
    */
   bool set_pull_mode(
       gpio_num_t pin_number,
-      InputPinHandler::PullMode mode);
+      PullMode mode);
 
   /**
    * Start watching the pin and report any errors that occur. If
@@ -294,7 +292,7 @@ public:
    *                   in use. The invoker must check both input and
    *                   output.
    */
-  void open_pin(gpio_num_t pin_number, InputPinHandler::PullMode mode);
+  void open_pin(gpio_num_t pin_number, PullMode mode);
 
 private:
 

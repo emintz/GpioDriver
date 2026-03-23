@@ -38,9 +38,10 @@ enum class IOStatus {
   CLOSE_FAILED,         /**< Pin could not be closed. */
   OPEN_SUCCEEDED,       /**< Pin opened successfully I/O given by scope. */
   OPEN_FAILED,          /**< OPEN_FAILED pin could not be opened. */
-  NO_SUCH_OUTPUT_PIN,   /**< NO_SUCH_PIN Non-existant pin number */
+  NO_SUCH_PIN,          /**< NO_SUCH_PIN Non-existant pin number */
   LOST_INPUT,           /**< LOST_INPUT Input has been lost */
   PIN_IN_USE,           /**< PIN_IN_USE Cannot open because pin is being used. */
+  PIN_OFFLINE,          /**< PIN_OFFLINE The pin is unavailable (wedged) */
   UNSUPPORTED,          /**< UNSUPPORTED The pin does not support the requested function. */
   RESET_FAILED,         /**< Pin or server could not be reset. */
   RESET_SUCCEEDED,      /**< Pin or server reset succeeded. */

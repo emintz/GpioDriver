@@ -20,11 +20,13 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-#include "Arduino.h"
+#include <Arduino.h>
 
 #include "InputAction.h"
 #include "InputPinHandler.h"
+#include "OutputPinHandler.h"
 #include "PinAssignments.h"
+#include "PullMode.h"
 #include "StatusMessage.h"
 
 #include <GpioChangeDetector.h>
@@ -34,9 +36,11 @@
 static HardwareGpioChangeService gpio_change_service;
 static PullQueueHT<uint8_t> pin_change_queue(1024);
 static PullQueueHT<StatusMessage> status_queue(128);
+static OutputPinHandler output_pin_handler(status_queue);
 static InputAction input_action(
     pin_change_queue,
-    status_queue);
+    status_queue,
+    output_pin_handler);
 static InputPinHandler input_pin_handler(
     pin_change_queue,
     status_queue);
@@ -119,16 +123,33 @@ void setup() {
 
   input_pin_handler.open_pin(
       static_cast<gpio_num_t>(BUILTIN_PUSH_BUTTON_PIN),
-      InputPinHandler::PullMode::UP);
+      PullMode::UP);
   input_pin_handler.open_pin(
       static_cast<gpio_num_t>(RED_PUSH_BUTTON_PIN),
-      InputPinHandler::PullMode::UP);
+      PullMode::UP);
   input_pin_handler.open_pin(
       static_cast<gpio_num_t>(YELLOW_PUSH_BUTTON_PIN),
-      InputPinHandler::PullMode::UP);
+      PullMode::UP);
   input_pin_handler.open_pin(
       static_cast<gpio_num_t>(GREEN_PUSH_BUTTON_PIN),
-      InputPinHandler::PullMode::UP);
+      PullMode::UP);
+
+  report_boolean_status(
+      "Opening red output pin",
+      output_pin_handler.open_pin(
+          static_cast<gpio_num_t>(RED_LED_PIN)));
+  report_boolean_status(
+      "Opening yellow output pin",
+      output_pin_handler.open_pin(
+          static_cast<gpio_num_t>(YELLOW_LED_PIN)));
+  report_boolean_status(
+      "Opening green output pin",
+      output_pin_handler.open_pin(
+          static_cast<gpio_num_t>(GREEN_LED_PIN)));
+  report_boolean_status(
+      "Opening built-in LED output pin",
+      output_pin_handler.open_pin(
+          static_cast<gpio_num_t>(BUILTIN_LED_PIN)));
 
   delay(1);
 }

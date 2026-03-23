@@ -77,9 +77,11 @@ static gpio_num_t to_output_pin(uint8_t input_pin) {
 
 InputAction::InputAction (
     PullQueueHT<uint8_t>& pin_change_queue,
-    PullQueueHT<StatusMessage>& status_queue) :
+    PullQueueHT<StatusMessage>& status_queue,
+    OutputPinHandler& output_handler) :
         pin_change_queue_(pin_change_queue),
-        status_queue_(status_queue) {
+        status_queue_(status_queue),
+        output_handler_(output_handler) {
 }
 
 InputAction::~InputAction () {
@@ -104,11 +106,10 @@ void InputAction::run(void) {
       empty_status_queue();
       int input_pin = pin_change & 0x7f;
       gpio_num_t output_pin = to_output_pin(pin_change & 0x7f);
-      if (GPIO_NUM_0 != output_pin) {
-        gpio_set_level(
-            output_pin,
-            (pin_change & 0x80) ? 1 : 0);
-      }
+      uint8_t output_mutation =
+          (pin_change & 0x80)
+          | static_cast<uint8_t>(output_pin);
+      output_handler_.mutate(output_mutation);
     }
   }
 }
