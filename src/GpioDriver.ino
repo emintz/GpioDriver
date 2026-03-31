@@ -22,6 +22,7 @@
  */
 #include <Arduino.h>
 
+#include "CommandDispatcher.h"
 #include "InputAction.h"
 #include "InputPinHandler.h"
 #include "OutputPinHandler.h"
@@ -34,6 +35,7 @@
 #include <TaskWithActionH.h>
 
 static HardwareGpioChangeService gpio_change_service;
+static PullQueueHT<uint8_t> input_queue(1024);
 static PullQueueHT<uint8_t> pin_change_queue(1024);
 static PullQueueHT<StatusMessage> status_queue(128);
 static OutputPinHandler output_pin_handler(status_queue);
@@ -49,6 +51,11 @@ static TaskWithActionH input_processor(
     10,
     &input_action,
     4096);
+static CommandDispatcher command_dispatcher(
+    status_queue,
+    input_queue,
+    input_pin_handler,
+    output_pin_handler);
 
 static bool report_boolean_status(
     const char *message,
@@ -102,6 +109,9 @@ void setup() {
       "GPIO value change monitoring",
       gpio_change_service.begin());
   report_boolean_status(
+      "Input queue (carries data from server)",
+      input_queue.begin());
+;  report_boolean_status(
       "Pin change queue startup", pin_change_queue.begin());
   report_boolean_status(
       "Status reporting queue startup", status_queue.begin());

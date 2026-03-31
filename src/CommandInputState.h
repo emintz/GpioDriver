@@ -37,8 +37,4 @@ enum class CommandInputState {
   RECOVERING,          /**< RECOVERING recovering from a command overrun. */
 };
 
-bool operator<(const CommandInputState lhs, const CommandInputState rhs) {
-  return static_cast<unsigned int>(lhs) < static_cast<unsigned int>(rhs);
-}
-
 #endif /* COMMANDINPUTSTATE_H_ */

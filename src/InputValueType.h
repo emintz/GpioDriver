@@ -37,8 +37,4 @@ enum class InputValueType {
   UNKNOWN,       /**< UNKNOWN       unknown type, should never happen *//**< UNKNOWN */
 };
 
-bool operator<(const InputValueType lhs, const InputValueType rhs) {
-  return static_cast<unsigned int>(lhs) < static_cast<unsigned int>(rhs);
-}
-
 #endif /* INPUTVALUETYPE_H_ */
