@@ -24,7 +24,6 @@
 #ifndef COMMANDDISPATCHER_H_
 #define COMMANDDISPATCHER_H_
 
-#include "ByteProvider.h"
 #include "InputPinHandler.h"
 #include "OutputPinHandler.h"
 
@@ -37,12 +36,13 @@
 #include "StatusReporter.h"
 #include "StatusScope.h"
 
-#include "PullQueueHT.h"
+#include <stdint.h>
+#include <PullQueueHT.h>
 
 class CommandDispatcher :
     public TaskAction,
     public StatusReporter {
-  ByteProvider& input_provider_;
+  PullQueueHT<uint8_t>& input_provider_;
   InputPinHandler& input_handler_;
   OutputPinHandler& output_handler_;
   StateTransitionTable<InputValueType, CommandInputState> transition_table_;
@@ -68,7 +68,7 @@ class CommandDispatcher :
 public:
   CommandDispatcher(
       PullQueueHT<StatusMessage> status_message_queue,
-      ByteProvider& input_provider,
+      PullQueueHT<uint8_t>& input_provider,
       InputPinHandler& input_handler,
       OutputPinHandler& output_handler);
   virtual ~CommandDispatcher() = default;

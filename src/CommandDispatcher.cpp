@@ -25,7 +25,7 @@
 
 CommandDispatcher::CommandDispatcher (
     PullQueueHT<StatusMessage> status_message_queue,
-    ByteProvider& input_provider,
+    PullQueueHT<uint8_t>& input_provider,
     InputPinHandler& input_handler,
     OutputPinHandler& output_handler) :
         StatusReporter(status_message_queue),
@@ -130,7 +130,7 @@ void CommandDispatcher::dispatch_to_output(void) {
   gpio_num_t pin = static_cast<gpio_num_t>(pin_byte_);
   switch (static_cast<ConfigurationCommandCode>(command_byte_)) {
   case ConfigurationCommandCode::CLOSE:
-    // TODO: close pin
+    output_handler_.close(pin);
     break;
   case ConfigurationCommandCode::OPEN: {
       auto open_status = output_handler_.open_pin(
@@ -142,7 +142,7 @@ void CommandDispatcher::dispatch_to_output(void) {
       break;
     }
   case ConfigurationCommandCode::RESET:
-    // TODO: implement
+    output_handler_.reset(pin);
     break;
   }
 }
@@ -154,7 +154,7 @@ void CommandDispatcher::dispatch_to_server(void) {
 void CommandDispatcher::run(void) {
   uint8_t input = 0;
   for (;;) {
-    input = input_provider_();
+    input_provider_.pull_message(&input);
     auto input_type = type_of(input);
     state_ = transition_table_.to(state_, input_type);
     switch(state_) {
