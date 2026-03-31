@@ -66,6 +66,20 @@ protected:
 
     status_message_queue_.send_message(&message);
   }
+
+  void send_status_from_ISR(
+      IOStatus status,
+      StatusScope scope,
+      gpio_num_t pin_number,
+      uint8_t side_data = 0) {
+    StatusMessage message = {
+        .status_ = status,
+        .scope_ = scope,
+        .pin_number_ = pin_number,
+        .side_data_ = side_data,
+    };
+    status_message_queue_.send_message_from_ISR(&message);
+  }
 };
 
 

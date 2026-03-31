@@ -105,9 +105,9 @@ void setup() {
       "Pin change queue startup", pin_change_queue.begin());
   report_boolean_status(
       "Status reporting queue startup", status_queue.begin());
-  report_boolean_status(
-      "Input pin handler startup",
-      input_pin_handler.begin());
+//  report_boolean_status(
+//      "Input pin handler startup",
+//      input_pin_handler.begin());
   report_boolean_status(
       "Input processor task",
       input_processor.start());

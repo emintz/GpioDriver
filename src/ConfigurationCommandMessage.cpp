@@ -1,7 +1,7 @@
 /*
- * OutputPin.cpp
+ * ConfigurationCommandMessage.cpp
  *
- *  Created on: Mar 19, 2026
+ *  Created on: Mar 24, 2026
  *      Author: Eric Mintz
  *
  * Copyright (c) 2026, Eric Mintz
@@ -21,20 +21,16 @@
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "OutputPinImpl.h"
+#include "ConfigurationCommandMessage.h"
 
-bool OutputPinImpl::open(void) {
-  auto status =
-      set_direction(GPIO_MODE_OUTPUT)
-      && configure_pull_mode(PullMode::FLOAT);
-  set_state(status ? PinState::OPEN : PinState::OFFLINE);
-  return status;
+ConfigurationCommandMessage::ConfigurationCommandMessage (
+    uint8_t command,
+    uint8_t scope,
+    uint8_t pin,
+    uint8_t resistor_config) :
+      command_(static_cast<ConfigurationCommandCode>(command)),
+      scope_(static_cast<StatusScope>(scope)),
+      pin_(static_cast<gpio_num_t>(pin)),
+      resistor_config_(static_cast<PullMode>(resistor_config)) {
 }
 
-bool OutputPinImpl::set_level(uint32_t level) {
-  Serial.printf("Setting pin %d to %d.\n",
-      static_cast<int>(pin_number()), level);
-  return send_esp_status(
-      gpio_set_level(pin_number(), level),
-      0);
-}

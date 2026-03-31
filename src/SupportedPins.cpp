@@ -25,7 +25,6 @@
 
 #include <cstdint>
 #include <driver/gpio.h>
-#include <map>
 #include <set>
 
 static std::set<gpio_num_t> input_pins(

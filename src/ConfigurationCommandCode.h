@@ -1,7 +1,7 @@
 /*
- * OutputPin.cpp
+ * ConfigurationCommandCode.h
  *
- *  Created on: Mar 19, 2026
+ *  Created on: Mar 24, 2026
  *      Author: Eric Mintz
  *
  * Copyright (c) 2026, Eric Mintz
@@ -21,20 +21,20 @@
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "OutputPinImpl.h"
+#ifndef CONFIGURATIONCOMMANDCODE_H_
+#define CONFIGURATIONCOMMANDCODE_H_
 
-bool OutputPinImpl::open(void) {
-  auto status =
-      set_direction(GPIO_MODE_OUTPUT)
-      && configure_pull_mode(PullMode::FLOAT);
-  set_state(status ? PinState::OPEN : PinState::OFFLINE);
-  return status;
-}
+/**
+ * @brief Commands to configure the server.
+ *
+ * Note that commands run within a scope: Input, Output,
+ * Input and Output, and Server-wide. Must match
+ * declaration in `ConfigurationCommandCode.java`
+ */
+enum class ConfigurationCommandCode {
+  RESET, /**< RESET Reset the server and refresh all inputs */
+  OPEN,  /**< OPEN Open for input or output, depending on scope. */
+  CLOSE, /**< CLOSE Close for input or output, depending on scope.. */
+};
 
-bool OutputPinImpl::set_level(uint32_t level) {
-  Serial.printf("Setting pin %d to %d.\n",
-      static_cast<int>(pin_number()), level);
-  return send_esp_status(
-      gpio_set_level(pin_number(), level),
-      0);
-}
+#endif /* CONFIGURATIONCOMMANDCODE_H_ */

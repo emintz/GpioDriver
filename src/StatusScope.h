@@ -1,7 +1,7 @@
 /*
- * OutputPin.cpp
+ * StatusScope.h
  *
- *  Created on: Mar 19, 2026
+ *  Created on: Mar 24, 2026
  *      Author: Eric Mintz
  *
  * Copyright (c) 2026, Eric Mintz
@@ -21,20 +21,18 @@
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "OutputPinImpl.h"
+#ifndef STATUSSCOPE_H_
+#define STATUSSCOPE_H_
 
-bool OutputPinImpl::open(void) {
-  auto status =
-      set_direction(GPIO_MODE_OUTPUT)
-      && configure_pull_mode(PullMode::FLOAT);
-  set_state(status ? PinState::OPEN : PinState::OFFLINE);
-  return status;
-}
+/**
+ * @brief scope (i.e. applicability) of the status message. Must match
+ *        declarations in `StatusScope.java`
+ */
+enum class StatusScope {
+  INPUT_SCOPE,         /**< INPUT_SCOPE, applies to an input pin */           /**< INPUT_SCOPE */
+  OUTPUT_SCOPE,        /**< OUTPUT_SCOPE, applies to an output pin */         /**< OUTPUT_SCOPE */
+  INPUT_OUTPUT_SCOPE,  /**< INPUT_OUTPUT_SCOPE, applies to input and output *//**< INPUT_OUTPUT_SCOPE */
+  SERVER_SCOPE,        /**< SERVER_SCOPE, applies server-wide */              /**< SERVER_SCOPE */
+};
 
-bool OutputPinImpl::set_level(uint32_t level) {
-  Serial.printf("Setting pin %d to %d.\n",
-      static_cast<int>(pin_number()), level);
-  return send_esp_status(
-      gpio_set_level(pin_number(), level),
-      0);
-}
+#endif /* STATUSSCOPE_H_ */

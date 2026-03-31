@@ -43,10 +43,7 @@ class OutputPinHandler final : protected StatusReporter {
     friend class OutputPinHandler;
 
     std::map<gpio_num_t, std::unique_ptr<OutputPinImpl>>& pins_;
-
     PullQueueHT<StatusMessage>& status_message_queue_;
-
-  public:
 
     PinMapMaker(
         std::map<gpio_num_t, std::unique_ptr<OutputPinImpl>>& pins,
@@ -55,12 +52,15 @@ class OutputPinHandler final : protected StatusReporter {
           status_message_queue_(status_message_queue) {
     }
 
+  public:
+
     void operator() (gpio_num_t pin) {
       pins_.emplace(
           pin,
           std::make_unique<OutputPinImpl>(
               pin,
-              status_message_queue_));
+              status_message_queue_)
+              );
     }
   };
 
@@ -68,7 +68,7 @@ class OutputPinHandler final : protected StatusReporter {
       IOStatus status,
       gpio_num_t pin_number,
       uint8_t side_data = 0) {
-
+    send_status(status, StatusScope::OUTPUT_SCOPE, pin_number, side_data);
   }
 
 public:
@@ -87,6 +87,18 @@ public:
     return
         pins_.contains(pin)
         && pins_.at(pin)->available();
+  }
+
+  /**
+   * Close the specified pin
+   *
+   * @param pin the pin to close
+   * @return `true` on success, `false` on failure.
+   */
+  bool close(gpio_num_t pin) {
+    return
+        in_use(pin)
+        && pins_.at(pin)->close();
   }
 
   /**
@@ -136,10 +148,27 @@ public:
    *
    * @param pin_number the pin to open
    *
-   * @return a pointer to the pin on success, `null` on
-   *         failure
+   * @return `true` on success, `false` on failure
    */
   bool open_pin(gpio_num_t pin_number);
+
+  /**
+   * Reset the specified pin. Note that pins in any state are reset.
+   * A successful reset restores the pin to availability, meaning that
+   * the pin will become available (i.e. will be closed) if it is active
+   * (i.e. is open).
+   *
+   * @param pin_number the pin to reset
+   *
+   * @return `true` on success, `false` on failure.
+   */
+  bool reset(gpio_num_t pin_number) {
+    return
+        pins_.contains(pin_number)
+        && pins_.at(pin_number)->reset();
+  }
+
+  bool valid(gpio_num_t pin_number);
 };
 
 #endif /* OUTPUTPINHANDLER_H_ */

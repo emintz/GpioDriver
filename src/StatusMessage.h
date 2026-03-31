@@ -24,9 +24,10 @@
 #ifndef STATUSMESSAGE_H_
 #define STATUSMESSAGE_H_
 
-#include <stdint.h>
+#include "StatusScope.h"
 
 #include <driver/gpio.h>
+#include <stdint.h>
 
 /**
  * @brief Pin I/O operation status codes. Must match declarations
@@ -41,24 +42,13 @@ enum class IOStatus {
   NO_SUCH_PIN,          /**< NO_SUCH_PIN Non-existant pin number */
   LOST_INPUT,           /**< LOST_INPUT Input has been lost */
   PIN_IN_USE,           /**< PIN_IN_USE Cannot open because pin is being used. */
+  PIN_NOT_ACTIVE,       /**< PIN_NOT_ACTIVE Cannot close because pin is not active. */
   PIN_OFFLINE,          /**< PIN_OFFLINE The pin is unavailable (wedged) */
   UNSUPPORTED,          /**< UNSUPPORTED The pin does not support the requested function. */
   RESET_FAILED,         /**< Pin or server could not be reset. */
   RESET_SUCCEEDED,      /**< Pin or server reset succeeded. */
   INVALID_STATE,        /**< INVALID_STATE Internal driver failure */
 };
-
-/**
- * @brief scope (i.e. applicability) of the status message. Must match
- *        declarations in `StatusScope.java`
- */
-enum class StatusScope {
-  INPUT_SCOPE,         /**< INPUT_SCOPE, applies to an input pin */           /**< INPUT_SCOPE */
-  OUTPUT_SCOPE,        /**< OUTPUT_SCOPE, applies to an output pin */         /**< OUTPUT_SCOPE */
-  INPUT_OUTPUT_SCOPE,  /**< INPUT_OUTPUT_SCOPE, applies to input and output *//**< INPUT_OUTPUT_SCOPE */
-  SERVER_SCOPE,        /**< SERVER_SCOPE, applies server-wide */              /**< SERVER_SCOPE */
-};
-
 
 /**
  * @brief Response to host request

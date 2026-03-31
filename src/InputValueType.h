@@ -1,7 +1,7 @@
 /*
- * OutputPin.cpp
+ * InputType.h
  *
- *  Created on: Mar 19, 2026
+ *  Created on: Mar 24, 2026
  *      Author: Eric Mintz
  *
  * Copyright (c) 2026, Eric Mintz
@@ -21,20 +21,24 @@
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "OutputPinImpl.h"
+#ifndef INPUTVALUETYPE_H_
+#define INPUTVALUETYPE_H_
 
-bool OutputPinImpl::open(void) {
-  auto status =
-      set_direction(GPIO_MODE_OUTPUT)
-      && configure_pull_mode(PullMode::FLOAT);
-  set_state(status ? PinState::OPEN : PinState::OFFLINE);
-  return status;
+#include <functional>
+
+/**
+ * @brief Value types used in incoming data
+ *
+ */
+enum class InputValueType {
+  VALUE,         /**< VALUE, a data byte, not a delimiter */            /**< VALUE */
+  START_MESSAGE, /**< START_MESSAGE `0xFF`, message start delimiter */  /**< START_MESSAGE */
+  END_MESSAGE,   /**< END_MESSAGE   `0x7F`, message end delimiter */    /**< END_MESSAGE */
+  UNKNOWN,       /**< UNKNOWN       unknown type, should never happen *//**< UNKNOWN */
+};
+
+bool operator<(const InputValueType lhs, const InputValueType rhs) {
+  return static_cast<unsigned int>(lhs) < static_cast<unsigned int>(rhs);
 }
 
-bool OutputPinImpl::set_level(uint32_t level) {
-  Serial.printf("Setting pin %d to %d.\n",
-      static_cast<int>(pin_number()), level);
-  return send_esp_status(
-      gpio_set_level(pin_number(), level),
-      0);
-}
+#endif /* INPUTVALUETYPE_H_ */

@@ -2,7 +2,7 @@
  * BaseIOPin.cpp
  *
  *  Created on: Mar 21, 2026
- *      Author: eric
+ *      Author: Eric Mintz
  *
  * Copyright (c) 2026, Eric Mintz
  * All Rights Reserved
@@ -78,6 +78,19 @@ bool BaseIOPin::set_direction(gpio_mode_t direction) {
           pin_number_,
           direction),
       0);
+}
+
+bool BaseIOPin::close(void) {
+  bool result = !in_use();
+  if (result) {
+    result = send_esp_status(
+        gpio_reset_pin(pin_number_),
+        0);
+    state_ = result ? PinState::CLOSED : PinState::OFFLINE;
+  } else {
+    send_pin_status(IOStatus::PIN_NOT_ACTIVE, 0);
+  }
+  return result;
 }
 
 bool BaseIOPin::reset(void) {

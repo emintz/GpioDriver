@@ -1,7 +1,7 @@
 /*
- * OutputPin.cpp
+ * ByteProvider.h
  *
- *  Created on: Mar 19, 2026
+ *  Created on: Mar 24, 2026
  *      Author: Eric Mintz
  *
  * Copyright (c) 2026, Eric Mintz
@@ -20,21 +20,25 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+#ifndef BYTEPROVIDER_H_
+#define BYTEPROVIDER_H_
 
-#include "OutputPinImpl.h"
+#include <stdint.h>
 
-bool OutputPinImpl::open(void) {
-  auto status =
-      set_direction(GPIO_MODE_OUTPUT)
-      && configure_pull_mode(PullMode::FLOAT);
-  set_state(status ? PinState::OPEN : PinState::OFFLINE);
-  return status;
-}
+/**
+ * @brief a source of `uint8_t` (i.e. byte) values.
+ *
+ * This class is a proxy for bytes read from the client.
+ * It is useful for testing.
+ */
+class ByteProvider {
+protected:
+  ByteProvider() = default;
 
-bool OutputPinImpl::set_level(uint32_t level) {
-  Serial.printf("Setting pin %d to %d.\n",
-      static_cast<int>(pin_number()), level);
-  return send_esp_status(
-      gpio_set_level(pin_number(), level),
-      0);
-}
+public:
+  virtual ~ByteProvider() = default;
+
+  virtual uint8_t operator() () = 0;
+};
+
+#endif /* BYTEPROVIDER_H_ */

@@ -59,7 +59,11 @@ protected:
    */
   bool configure_pull_mode(PullMode pull_mode);
 
-
+  /**
+   * Physical GPIO pin accessor
+   *
+   * @return the physical pin number
+   */
   gpio_num_t pin_number() {
     return pin_number_;
   }
@@ -100,6 +104,11 @@ protected:
    */
   bool set_direction(gpio_mode_t direction);
 
+  /**
+   * Sets the pin state to the specified value.
+   *
+   * @param state the state to set.
+   */
   void set_state(PinState state) {
     state_ = state;
   }
@@ -116,6 +125,15 @@ public:
   bool available() {
     return PinState::CLOSED == state_;
   }
+
+  /**
+   * Close this pin.
+   *
+   * @return true if the pin was closed successfully, false
+   *         if the close could not be performed for any reason,
+   *         including the pin already being closed.
+   */
+  bool close();
 
   /**
    * Query this pin for being opened for output
