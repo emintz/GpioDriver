@@ -40,8 +40,12 @@ public enum IOStatusCode {
   NO_SUCH_PIN,
   /** LOST_INPUT Input has been lost */
   LOST_INPUT,
-  /** IN_USE Cannot openXXX because pin is being used. */
+  /** IN_USE Cannot open because pin is being used. */
   PIN_IN_USE,
+  /** Cannot close or perform I/O because pin is not active. */
+  PIN_NOT_ACTIVE,
+  /** Pin is offline (wedged) */
+  PIN_OFFLINE,
   /** UNSUPPORTED The pin does not support the requested function. */
   UNSUPPORTED,
   /** Server could not reset the pin. */
