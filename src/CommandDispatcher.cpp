@@ -112,26 +112,18 @@ bool CommandDispatcher::check_availability(
 void CommandDispatcher::dispatch_to_input(void) {
   gpio_num_t pin = static_cast<gpio_num_t>(pin_byte_);
   switch (static_cast<ConfigurationCommandCode>(command_byte_)) {
-  case ConfigurationCommandCode::RESET:
-    input_handler_.reset(pin);
+  case ConfigurationCommandCode::CLOSE:
+    input_handler_.close_pin(pin);
     break;
   case ConfigurationCommandCode::OPEN:
     if (check_availability(StatusScope::INPUT_SCOPE)) {
       input_handler_.open_pin(pin, static_cast<PullMode>(resistor_config_byte_));
     }
     break;
-  case ConfigurationCommandCode::CLOSE:
-    if (!input_handler_.in_use(pin)) {
-      send_status(
-          IOStatus::CLOSE_FAILED,
-          StatusScope::INPUT_SCOPE,
-          pin);
-    } else {
-      // TODO: close the pin.
-    }
+  case ConfigurationCommandCode::RESET:
+    input_handler_.reset(pin);
     break;
   }
-
 }
 
 void CommandDispatcher::dispatch_to_output(void) {

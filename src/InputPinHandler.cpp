@@ -43,6 +43,7 @@ bool InputPinHandler::valid(gpio_num_t pin_number) {
   if (!is_valid) {
     send_input_status(IOStatus::NO_SUCH_PIN, pin_number);
   }
+  return is_valid;
 }
 
 bool InputPinHandler::close_pin(gpio_num_t pin) {
@@ -60,21 +61,20 @@ bool InputPinHandler::open_pin(
     PullMode mode) {
   bool opened_pin = false;
 
-  if (!pins_.contains(pin_number)) {
-    send_input_status(IOStatus::NO_SUCH_PIN, pin_number);
-  } else{
+  if (valid(pin_number)) {
     auto pin = pins_.at(pin_number).get();
     if (pin->offline()) {
      send_input_status(IOStatus::INVALID_STATE, pin_number);
     } else if (pin->in_use()) {
      send_input_status(IOStatus::PIN_IN_USE, pin_number);
     } else if (!pin->available()) {
-     send_input_status(IOStatus::PIN_OFFLINE, pin_number);
+     send_input_status(
+         IOStatus::PIN_OFFLINE, pin_number);
     } else if (
         opened_pin =
             pin->open(mode)
             && pin->start()) {
-     send_input_status(IOStatus::OPEN_SUCCEEDED, pin_number);
+     send_input_status(IOStatus::OPEN_SUCCEEDED, pin_number, gpio_get_level(pin_number));
     } else {
      send_input_status(IOStatus::OPEN_FAILED, pin_number);
      pin->reset();

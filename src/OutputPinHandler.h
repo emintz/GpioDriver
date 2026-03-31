@@ -85,7 +85,7 @@ public:
    */
   bool available(gpio_num_t pin) {
     return
-        pins_.contains(pin)
+        valid(pin)
         && pins_.at(pin)->available();
   }
 
@@ -112,7 +112,7 @@ public:
    */
   bool in_use(gpio_num_t pin) {
     return
-        pins_.contains(pin)
+        valid(pin)
         && pins_.at(pin)->in_use();
   }
 
@@ -127,7 +127,7 @@ public:
    */
   bool offline(gpio_num_t pin) {
     return
-        !pins_.contains(pin)
+        !valid(pin)
         || pins_.at(pin)->offline();
   }
 
@@ -164,7 +164,7 @@ public:
    */
   bool reset(gpio_num_t pin_number) {
     return
-        pins_.contains(pin_number)
+        valid(pin_number)
         && pins_.at(pin_number)->reset();
   }
 

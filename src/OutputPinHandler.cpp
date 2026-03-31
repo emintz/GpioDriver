@@ -67,7 +67,7 @@ bool OutputPinHandler::open_pin(
 void OutputPinHandler::mutate(uint8_t mutation) {
   Serial.printf("Applying mutation: %02x.\n", mutation);
   uint8_t pin_number = mutation & 0x7F;
-  if (byte_to_pin_.contains(pin_number)) {
+  if (valid(static_cast<gpio_num_t>(pin_number))) {
     auto pin_id = byte_to_pin_.at(pin_number);
     if (pins_.at(pin_id)->in_use()) {
       pins_.at(pin_id)->set_level(
