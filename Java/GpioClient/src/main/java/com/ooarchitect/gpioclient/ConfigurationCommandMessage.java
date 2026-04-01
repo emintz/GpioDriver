@@ -19,7 +19,18 @@
 package com.ooarchitect.gpioclient;
 
 /**
- * Message that orders the server to configure a pin.
+ * Message that orders the server to configure a pin. Note that Commands
+ * <em>MUST</em> be transmitted in the following format:
+ *
+ * <ol>
+ *   <li>The action to take</li>
+ *   <li>Specifies where to apply the command, e.g.
+ *       to an input pin, an output pin, etc.</li>
+ *   <li>The physical GPIO pin number</li>
+ *   <li>Pullup/Pulldown resistor configuration. Set to
+ *      `FLOATING` when N/A</li>
+ *   <li>`0x7F`, signaling message end</li>
+ * </ol>
  *
  * @param command               how to configure the pin
  * @param ioDirection           input or output
