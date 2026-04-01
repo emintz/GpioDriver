@@ -29,10 +29,10 @@
  *        declarations in `StatusScope.java`
  */
 enum class StatusScope {
-  INPUT_SCOPE,         /**< INPUT_SCOPE, applies to an input pin */           /**< INPUT_SCOPE */
-  OUTPUT_SCOPE,        /**< OUTPUT_SCOPE, applies to an output pin */         /**< OUTPUT_SCOPE */
-  INPUT_OUTPUT_SCOPE,  /**< INPUT_OUTPUT_SCOPE, applies to input and output *//**< INPUT_OUTPUT_SCOPE */
-  SERVER_SCOPE,        /**< SERVER_SCOPE, applies server-wide */              /**< SERVER_SCOPE */
+  INPUT_SCOPE,         /**< INPUT_SCOPE, applies to an input pin */
+  OUTPUT_SCOPE,        /**< OUTPUT_SCOPE, applies to an output pin */
+  INPUT_OUTPUT_SCOPE,  /**< INPUT_OUTPUT_SCOPE, applies to input and output */
+  SERVER_SCOPE,        /**< SERVER_SCOPE, applies server-wide */
 };
 
 #endif /* STATUSSCOPE_H_ */

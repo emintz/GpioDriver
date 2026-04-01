@@ -82,7 +82,6 @@ public:
     return scope_;
   }
 
-
 };
 
 #endif /* CONFIGURATIONCOMMANDMESSAGE_H_ */
