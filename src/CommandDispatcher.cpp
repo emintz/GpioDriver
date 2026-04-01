@@ -132,15 +132,11 @@ void CommandDispatcher::dispatch_to_output(void) {
   case ConfigurationCommandCode::CLOSE:
     output_handler_.close(pin);
     break;
-  case ConfigurationCommandCode::OPEN: {
-      auto open_status = output_handler_.open_pin(
-          pin);
-      send_status(
-          open_status ? IOStatus::OPEN_SUCCEEDED : IOStatus::OPEN_FAILED,
-          StatusScope::OUTPUT_SCOPE,
-          pin);
-      break;
+  case ConfigurationCommandCode::OPEN:
+    if (check_availability(StatusScope::OUTPUT_SCOPE)) {
+      output_handler_.open_pin(pin);
     }
+    break;
   case ConfigurationCommandCode::RESET:
     output_handler_.reset(pin);
     break;
@@ -148,7 +144,7 @@ void CommandDispatcher::dispatch_to_output(void) {
 }
 
 void CommandDispatcher::dispatch_to_server(void) {
-
+  // TODO: implement. What da heck should we do here?
 }
 
 void CommandDispatcher::run(void) {
@@ -177,6 +173,9 @@ void CommandDispatcher::run(void) {
       break;
     case CommandInputState::AT_RESISTOR_CONFIG:
       resistor_config_byte_ = input;
+      break;
+    case CommandInputState::HAVE_COMMAND:
+      dispatch_command();
       break;
     case CommandInputState::RECOVERING:
       // Nothing to do. Let input run out until we find

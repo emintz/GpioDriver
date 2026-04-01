@@ -23,16 +23,21 @@
 #include <Arduino.h>
 
 #include "CommandDispatcher.h"
+#include "ConfigurationCommandCode.h"
 #include "InputAction.h"
 #include "InputPinHandler.h"
 #include "OutputPinHandler.h"
 #include "PinAssignments.h"
 #include "PullMode.h"
 #include "StatusMessage.h"
+#include "StatusScope.h"
 
 #include <GpioChangeDetector.h>
 #include <PullQueueHT.h>
 #include <TaskWithActionH.h>
+
+#define COMMAND_START 0xFF
+#define COMMAND_END 0x7F
 
 static HardwareGpioChangeService gpio_change_service;
 static PullQueueHT<uint8_t> input_queue(1024);
@@ -56,6 +61,11 @@ static CommandDispatcher command_dispatcher(
     input_queue,
     input_pin_handler,
     output_pin_handler);
+static TaskWithActionH dispatcher_task(
+    "Dispatcher",
+    11,
+    &command_dispatcher,
+    4096);
 
 static bool report_boolean_status(
     const char *message,
@@ -83,51 +93,28 @@ static void ripple(int count) {
   }
 }
 
-void setup() {
-  Serial.begin(115200);
-  Serial.printf("GPIO Driver compiled on %s at %s.\n",
-      __DATE__, __TIME__);
+static void send_command(
+    ConfigurationCommandCode command_code,
+    StatusScope scope_code,
+    gpio_num_t pin_number_code,
+    PullMode resistor_configuration_code) {
+  uint8_t lead_in(COMMAND_START);
+  uint8_t command_value = static_cast<uint8_t>(command_code);
+  uint8_t scope_value = static_cast<uint8_t>(scope_code);
+  uint8_t pin_number_value = static_cast<uint8_t>(pin_number_code);
+  uint8_t resistor_configuration_value =
+      static_cast<uint8_t>(resistor_configuration_code);
+  uint8_t lead_out(COMMAND_END);
 
-  pinMode(BUILTIN_LED_PIN, OUTPUT);
-  pinMode(RED_LED_PIN, OUTPUT);
-  pinMode(YELLOW_LED_PIN, OUTPUT);
-  pinMode(GREEN_LED_PIN, OUTPUT);
+  input_queue.send_message(&lead_in);
+  input_queue.send_message(&command_value);
+  input_queue.send_message(&scope_value);
+  input_queue.send_message(&pin_number_value);
+  input_queue.send_message(&resistor_configuration_value);
+  input_queue.send_message(&lead_out);
+}
 
-  digitalWrite(BUILTIN_LED_PIN, LOW);
-  digitalWrite(RED_LED_PIN, LOW);
-  digitalWrite(YELLOW_LED_PIN, LOW);
-  digitalWrite(GREEN_LED_PIN, LOW);
-
-  pinMode(BUILTIN_PUSH_BUTTON_PIN, INPUT_PULLUP);
-  pinMode(RED_PUSH_BUTTON_PIN, INPUT_PULLUP);
-  pinMode(YELLOW_PUSH_BUTTON_PIN, INPUT_PULLUP);
-  pinMode(GREEN_PUSH_BUTTON_PIN, INPUT_PULLUP);
-
-  ripple(10);
-
-  report_boolean_status(
-      "GPIO value change monitoring",
-      gpio_change_service.begin());
-  report_boolean_status(
-      "Input queue (carries data from server)",
-      input_queue.begin());
-;  report_boolean_status(
-      "Pin change queue startup", pin_change_queue.begin());
-  report_boolean_status(
-      "Status reporting queue startup", status_queue.begin());
-  report_boolean_status(
-      "Input processor task",
-      input_processor.start());
-
-  Serial.printf("The GREEN LED control pin is %s.\n",
-      input_pin_handler.in_use(static_cast<gpio_num_t>(GREEN_PUSH_BUTTON_PIN))
-      ? "in use" : "available");
-
-  digitalWrite(BUILTIN_LED_PIN, digitalRead(BUILTIN_PUSH_BUTTON_PIN));
-  digitalWrite(RED_LED_PIN, digitalRead(RED_PUSH_BUTTON_PIN));
-  digitalWrite(YELLOW_LED_PIN, digitalRead(YELLOW_PUSH_BUTTON_PIN));
-  digitalWrite(GREEN_LED_PIN, digitalRead(GREEN_PUSH_BUTTON_PIN));
-
+static void low_level_pin_open(void) {
   input_pin_handler.open_pin(
       static_cast<gpio_num_t>(BUILTIN_PUSH_BUTTON_PIN),
       PullMode::UP);
@@ -159,6 +146,107 @@ void setup() {
           static_cast<gpio_num_t>(BUILTIN_LED_PIN)));
 
   delay(1);
+}
+
+static void open_pins_with_commands(void) {
+  send_command(
+    ConfigurationCommandCode::OPEN,
+    StatusScope::INPUT_SCOPE,
+    static_cast<gpio_num_t>(BUILTIN_PUSH_BUTTON_PIN),
+    PullMode::UP);
+  send_command(
+    ConfigurationCommandCode::OPEN,
+    StatusScope::INPUT_SCOPE,
+    static_cast<gpio_num_t>(RED_PUSH_BUTTON_PIN),
+    PullMode::UP);
+  send_command(
+    ConfigurationCommandCode::OPEN,
+    StatusScope::INPUT_SCOPE,
+    static_cast<gpio_num_t>(YELLOW_PUSH_BUTTON_PIN),
+    PullMode::UP);
+  send_command(
+    ConfigurationCommandCode::OPEN,
+    StatusScope::INPUT_SCOPE,
+    static_cast<gpio_num_t>(GREEN_PUSH_BUTTON_PIN),
+    PullMode::UP);
+
+  send_command(
+    ConfigurationCommandCode::OPEN,
+    StatusScope::OUTPUT_SCOPE,
+    static_cast<gpio_num_t>(BUILTIN_LED_PIN),
+    PullMode::FLOAT);
+  send_command(
+    ConfigurationCommandCode::OPEN,
+    StatusScope::OUTPUT_SCOPE,
+    static_cast<gpio_num_t>(RED_LED_PIN),
+    PullMode::FLOAT);
+  send_command(
+    ConfigurationCommandCode::OPEN,
+    StatusScope::OUTPUT_SCOPE,
+    static_cast<gpio_num_t>(YELLOW_LED_PIN),
+    PullMode::FLOAT);
+  send_command(
+    ConfigurationCommandCode::OPEN,
+    StatusScope::OUTPUT_SCOPE,
+    static_cast<gpio_num_t>(GREEN_LED_PIN),
+    PullMode::FLOAT);
+
+    delay(1);
+}
+
+void setup() {
+  Serial.begin(115200);
+  Serial.printf("GPIO Driver compiled on %s at %s.\n",
+      __DATE__, __TIME__);
+
+  pinMode(BUILTIN_LED_PIN, OUTPUT);
+  pinMode(RED_LED_PIN, OUTPUT);
+  pinMode(YELLOW_LED_PIN, OUTPUT);
+  pinMode(GREEN_LED_PIN, OUTPUT);
+
+  digitalWrite(BUILTIN_LED_PIN, LOW);
+  digitalWrite(RED_LED_PIN, LOW);
+  digitalWrite(YELLOW_LED_PIN, LOW);
+  digitalWrite(GREEN_LED_PIN, LOW);
+
+  pinMode(BUILTIN_PUSH_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(RED_PUSH_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(YELLOW_PUSH_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(GREEN_PUSH_BUTTON_PIN, INPUT_PULLUP);
+
+  ripple(10);
+
+  report_boolean_status(
+      "Input queue (carries data from server) startup",
+      input_queue.begin());
+  report_boolean_status(
+      "GPIO value change monitoring",
+      gpio_change_service.begin());
+;  report_boolean_status(
+      "Pin change queue startup",
+      pin_change_queue.begin());
+  report_boolean_status(
+      "Status reporting queue startup",
+      status_queue.begin());
+
+  report_boolean_status(
+      "Input processor task startup",
+      input_processor.start());
+  report_boolean_status(
+      "Command dispatcher task startup",
+      dispatcher_task.start());
+
+  Serial.printf("The GREEN LED control pin is %s.\n",
+      input_pin_handler.in_use(static_cast<gpio_num_t>(GREEN_PUSH_BUTTON_PIN))
+      ? "in use" : "available");
+
+  digitalWrite(BUILTIN_LED_PIN, digitalRead(BUILTIN_PUSH_BUTTON_PIN));
+  digitalWrite(RED_LED_PIN, digitalRead(RED_PUSH_BUTTON_PIN));
+  digitalWrite(YELLOW_LED_PIN, digitalRead(YELLOW_PUSH_BUTTON_PIN));
+  digitalWrite(GREEN_LED_PIN, digitalRead(GREEN_PUSH_BUTTON_PIN));
+
+  Serial.println("Opening GPIO pins.");
+  open_pins_with_commands();
 }
 
 void loop() {

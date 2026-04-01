@@ -82,3 +82,9 @@ bool InputPinHandler::open_pin(
   }
   return opened_pin;
 }
+
+bool InputPinHandler::reset(gpio_num_t pin_number) {
+  return
+      valid(pin_number)
+      && pins_.at(pin_number)->reset();
+}

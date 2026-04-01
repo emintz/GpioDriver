@@ -144,8 +144,23 @@ public:
       gpio_num_t pin_number,
       PullMode node);
 
+  /**
+   * Resets the specified pin. On success, the pin becomes available;
+   * if it was active, it will be closed. On failure, the pin goes off-line.
+   *
+   * @param pin_number the pin to reset
+   * @return 'true' on success; `false` on failure
+   */
   bool reset(gpio_num_t pin_number);
 
+  /**
+   * Enqueue a status message for transmission to the client. Note that
+   * the message's scope will be `INPUT_SCOPE`.
+   *
+   * @param status the status code
+   * @param pin_number the pin number
+   * @param side_data side data; defaults to 0 if not provided
+   */
   void send_input_status(
       IOStatus status,
       gpio_num_t pin_number,
