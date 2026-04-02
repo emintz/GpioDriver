@@ -32,6 +32,7 @@
 #include "StatusMessage.h"
 #include "StatusScope.h"
 
+#include <driver/uart.h>
 #include <GpioChangeDetector.h>
 #include <PullQueueHT.h>
 #include <TaskWithActionH.h>
@@ -194,10 +195,20 @@ static void open_pins_with_commands(void) {
     delay(1);
 }
 
+static void check_uart_driver(uart_port_t port) {
+  Serial.printf(
+      "UART port %d driver %s installed.\n",
+      static_cast<int>(port),
+      uart_is_driver_installed(port) ? "is" : "is not");
+}
+
 void setup() {
   Serial.begin(115200);
   Serial.printf("GPIO Driver compiled on %s at %s.\n",
       __DATE__, __TIME__);
+
+  check_uart_driver(UART_NUM_0);
+  check_uart_driver(UART_NUM_1);
 
   pinMode(BUILTIN_LED_PIN, OUTPUT);
   pinMode(RED_LED_PIN, OUTPUT);
