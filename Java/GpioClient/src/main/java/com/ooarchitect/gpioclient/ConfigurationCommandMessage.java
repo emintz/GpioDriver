@@ -24,7 +24,7 @@ package com.ooarchitect.gpioclient;
  *
  * <ol>
  *   <li>The action to take</li>
- *   <li>Specifies where to apply the command, e.g.
+ *   <li>Scope specifying where to apply the command, e.g.
  *       to an input pin, an output pin, etc.</li>
  *   <li>The physical GPIO pin number</li>
  *   <li>Pullup/Pulldown resistor configuration. Set to

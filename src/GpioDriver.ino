@@ -31,6 +31,7 @@
 #include "PullMode.h"
 #include "StatusMessage.h"
 #include "StatusScope.h"
+#include "UARTDriver.h"
 
 #include <driver/uart.h>
 #include <GpioChangeDetector.h>
@@ -208,6 +209,13 @@ void setup() {
       __DATE__, __TIME__);
 
   check_uart_driver(UART_NUM_0);
+  check_uart_driver(UART_NUM_1);
+  Serial.printf("Hardware FIFO buffer length for port 1 is: %d.\n",
+      UART_HW_FIFO_LEN(UART_NUM_1));
+
+  report_boolean_status(
+      "Installation of UART driver for port 1",
+      UARTDriver::install_unbuffered(UART_NUM_1));
   check_uart_driver(UART_NUM_1);
 
   pinMode(BUILTIN_LED_PIN, OUTPUT);
