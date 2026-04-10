@@ -51,7 +51,18 @@ enum class IOStatus {
 };
 
 /**
- * @brief Response to host request
+ * @brief Response to host request. Must match its counterpart in
+ *        `IOStatusMessage.javaa`
+ *
+ * Result of an operation, which is serialized and sent to the
+ * client. The wire format is:
+ *
+ * 1. `0xFF`, the lead-in code
+ * 2. Physical GPIO number
+ * 3. Status code.
+ * 4. I/O scope
+ * 5. Status-specific side data. Must be 0 if N/A.
+ * 6. `0x7F`, lead-out
  */
 struct StatusMessage {
   IOStatus status_;        /**< Pin status */

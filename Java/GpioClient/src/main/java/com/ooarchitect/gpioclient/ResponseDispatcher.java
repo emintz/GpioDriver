@@ -45,6 +45,7 @@ import java.util.function.Consumer;
  *   <li>Physical GPIO number, which must correspond to an element
  *       of type {@code T}</li>
  *   <li>Pin status, the ordinal of an {@link IOStatusCode} element</li>
+ *   <li>Input/Output scope.
  *   <li>Status-specific side data. Must be 0 if not used. Note
  *       that side data can contain any value, including the
  *       normally reserved {@code 0xFF} and {0X7F}.</li>
