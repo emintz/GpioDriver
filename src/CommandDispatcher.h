@@ -101,7 +101,7 @@ public:
    * @param output_handler processes commands in the `OUTPUT_SCOPE`
    */
   CommandDispatcher(
-      PullQueueHT<StatusMessage> status_message_queue,
+      PullQueueHT<StatusMessage>& status_message_queue,
       PullQueueHT<uint8_t>& input_provider,
       InputPinHandler& input_handler,
       OutputPinHandler& output_handler);

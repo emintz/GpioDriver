@@ -24,7 +24,7 @@
 #include "CommandDispatcher.h"
 
 CommandDispatcher::CommandDispatcher (
-    PullQueueHT<StatusMessage> status_message_queue,
+    PullQueueHT<StatusMessage>& status_message_queue,
     PullQueueHT<uint8_t>& input_provider,
     InputPinHandler& input_handler,
     OutputPinHandler& output_handler) :
