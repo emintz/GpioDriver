@@ -24,7 +24,7 @@
 #include "OutputPinHandler.h"
 
 OutputPinHandler::OutputPinHandler (
-    PullQueueHT<StatusMessage>& status_message_queue) :
+    PullQueueHT<Packet>& status_message_queue) :
         StatusReporter(status_message_queue),
         pins_(),
         byte_to_pin_() {

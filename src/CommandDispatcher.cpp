@@ -24,11 +24,11 @@
 #include "CommandDispatcher.h"
 
 CommandDispatcher::CommandDispatcher (
-    PullQueueHT<StatusMessage>& status_message_queue,
+    PullQueueHT<Packet>& packet_queue,
     PullQueueHT<uint8_t>& input_provider,
     InputPinHandler& input_handler,
     OutputPinHandler& output_handler) :
-        StatusReporter(status_message_queue),
+        StatusReporter(packet_queue),
         input_provider_(input_provider),
         input_handler_(input_handler),
         output_handler_(output_handler),
@@ -183,6 +183,5 @@ void CommandDispatcher::run(void) {
       break;
     }
   }
-
 }
 

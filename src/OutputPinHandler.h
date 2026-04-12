@@ -24,8 +24,8 @@
 #ifndef OUTPUTPINHANDLER_H_
 #define OUTPUTPINHANDLER_H_
 
+#include "IOStatusCode.h"
 #include "OutputPinImpl.h"
-#include "StatusMessage.h"
 #include "StatusReporter.h"
 #include "SupportedPins.h"
 
@@ -43,11 +43,11 @@ class OutputPinHandler final : protected StatusReporter {
     friend class OutputPinHandler;
 
     std::map<gpio_num_t, std::unique_ptr<OutputPinImpl>>& pins_;
-    PullQueueHT<StatusMessage>& status_message_queue_;
+    PullQueueHT<Packet>& status_message_queue_;
 
     PinMapMaker(
         std::map<gpio_num_t, std::unique_ptr<OutputPinImpl>>& pins,
-        PullQueueHT<StatusMessage>& status_message_queue) :
+        PullQueueHT<Packet>& status_message_queue) :
           pins_(pins),
           status_message_queue_(status_message_queue) {
     }
@@ -72,7 +72,7 @@ class OutputPinHandler final : protected StatusReporter {
   }
 
 public:
-  OutputPinHandler (PullQueueHT<StatusMessage>& status_message_queue);
+  OutputPinHandler (PullQueueHT<Packet>& status_message_queue);
   virtual ~OutputPinHandler () = default;
 
   /**

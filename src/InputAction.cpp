@@ -21,11 +21,11 @@
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "IOStatusCode.h"
 #include "InputAction.h"
+#include "PinAssignments.h"
 
 #include <Arduino.h>
-
-#include <PinAssignments.h>
 
 static const char HEX_DIGITS[] = "0123456789ABCDE";
 
@@ -41,15 +41,12 @@ static void dump_hex(uint8_t value) {
   Serial.print(' ');
 }
 
-static void dump_status(const StatusMessage& status) {
-  Serial.print('<');
-  dump_hex(0xFF);
-  dump_hex(status.pin_number_);
-  dump_hex(static_cast<uint8_t>(status.status_));
-  dump_hex(static_cast<uint8_t>(status.scope_));
-  dump_hex(status.side_data_);
-  dump_hex(0x7F);
-  Serial.print('>');
+static void dump_packet(const Packet& packet) {
+  auto length = static_cast<unsigned int>(packet.length());
+  auto data = packet.data();
+  for (unsigned int index = 0; index < length; ++index) {
+    dump_hex(*data++);
+  }
 }
 
 static gpio_num_t to_output_pin(uint8_t input_pin) {
@@ -76,40 +73,31 @@ static gpio_num_t to_output_pin(uint8_t input_pin) {
 //-----------------------------------------------------------
 
 InputAction::InputAction (
-    PullQueueHT<uint8_t>& pin_change_queue,
-    PullQueueHT<StatusMessage>& status_queue,
+    PullQueueHT<Packet>& packet_queue,
     OutputPinHandler& output_handler) :
-        pin_change_queue_(pin_change_queue),
-        status_queue_(status_queue),
+        packet_queue_(packet_queue),
         output_handler_(output_handler) {
 }
 
 InputAction::~InputAction () {
 }
 
-void InputAction::empty_status_queue(void) {
-  while (0 < status_queue_.waiting_message_count()) {
-    StatusMessage status_message;
-    bool read_result = status_queue_.pull_message(&status_message, 0);
-    if (!read_result) {
-      break;
-    }
-    dump_status(status_message);
-  }
-}
-
 void InputAction::run(void) {
   uint8_t pin_change = 0;
+  Packet packet;
   for (;;) {
-    empty_status_queue();
-    if (pin_change_queue_.pull_message(&pin_change, 1)) {
-      empty_status_queue();
-      int input_pin = pin_change & 0x7f;
-      gpio_num_t output_pin = to_output_pin(pin_change & 0x7f);
-      uint8_t output_mutation =
-          (pin_change & 0x80)
-          | static_cast<uint8_t>(output_pin);
-      output_handler_.mutate(output_mutation);
+    if (packet_queue_.pull_message(&packet)) {
+      if (1 == packet.length()) {
+        auto pin_change = *packet.data();
+        int input_pin = pin_change & 0x7f;
+        gpio_num_t output_pin = to_output_pin(pin_change & 0x7f);
+        uint8_t output_mutation =
+            (pin_change & 0x80)
+            | static_cast<uint8_t>(output_pin);
+        output_handler_.mutate(output_mutation);
+      } else {
+        dump_packet(packet);
+      }
     }
   }
 }

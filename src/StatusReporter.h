@@ -24,7 +24,8 @@
 #ifndef STATUSREPORTER_H_
 #define STATUSREPORTER_H_
 
-#include "StatusMessage.h"
+#include "IOStatusCode.h"
+#include "Packet.h"
 
 #include <PullQueueHT.h>
 
@@ -33,10 +34,10 @@
  * transmission to the client
  */
 class StatusReporter {
-  PullQueueHT<StatusMessage>& status_message_queue_;
+  PullQueueHT<Packet>& status_message_queue_;
 
 protected:
-  StatusReporter(PullQueueHT<StatusMessage>& status_message_queue) :
+  StatusReporter(PullQueueHT<Packet>& status_message_queue) :
     status_message_queue_(status_message_queue) {
   }
 
@@ -57,13 +58,7 @@ protected:
       StatusScope scope,
       gpio_num_t pin_number,
       uint8_t side_data = 0) {
-    StatusMessage message = {
-        .status_ = status,
-        .scope_ = scope,
-        .pin_number_ = pin_number,
-        .side_data_ = side_data,
-    };
-
+    Packet message(status, scope, pin_number, side_data);
     status_message_queue_.send_message(&message);
   }
 
@@ -72,12 +67,7 @@ protected:
       StatusScope scope,
       gpio_num_t pin_number,
       uint8_t side_data = 0) {
-    StatusMessage message = {
-        .status_ = status,
-        .scope_ = scope,
-        .pin_number_ = pin_number,
-        .side_data_ = side_data,
-    };
+    Packet message(status, scope, pin_number, side_data);
     status_message_queue_.send_message_from_ISR(&message);
   }
 };

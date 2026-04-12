@@ -24,20 +24,20 @@
 #ifndef COMMANDDISPATCHER_H_
 #define COMMANDDISPATCHER_H_
 
-#include "InputPinHandler.h"
-#include "OutputPinHandler.h"
-
-#include "TaskAction.h"
-
 #include "ConfigurationCommandMessage.h"
 #include "CommandInputState.h"
+#include "InputPinHandler.h"
 #include "InputValueType.h"
-#include "StateTransitionTable.h"
+#include "IOStatusCode.h"
+#include "OutputPinHandler.h"
+#include "Packet.h"
 #include "StatusReporter.h"
 #include "StatusScope.h"
 
 #include <stdint.h>
 #include <PullQueueHT.h>
+#include <StateTransitionTable.h>
+#include <TaskAction.h>
 
 class CommandDispatcher :
     public TaskAction,
@@ -95,13 +95,14 @@ public:
   /**
    * Constructor
    *
-   * @param status_message_queue carries responses for transmission the client
+   * @param packet_queue carries packets (mutations and status messages) for
+   *        transmission to the client
    * @param input_provider provides the input stream
    * @param input_handler processes commands in the `INPUT_SCOPE`
    * @param output_handler processes commands in the `OUTPUT_SCOPE`
    */
   CommandDispatcher(
-      PullQueueHT<StatusMessage>& status_message_queue,
+      PullQueueHT<Packet>& packet_queue,
       PullQueueHT<uint8_t>& input_provider,
       InputPinHandler& input_handler,
       OutputPinHandler& output_handler);

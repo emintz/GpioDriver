@@ -1,7 +1,7 @@
 /*
- * UARTInputAction.cpp
+ * UARTOutputAction.cpp
  *
- *  Created on: Apr 1, 2026
+ *  Created on: Apr 10, 2026
  *      Author: Eric Mintz
  *
  * Copyright (c) 2026, Eric Mintz
@@ -21,14 +21,22 @@
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "UARTInputAction.h"
+#include "UARTOutputAction.h"
 
-void UARTInputAction::run(void) {
-  uint8_t byte = 0;
+#include <Arduino.h>
+
+void UARTOutputAction::run(void) {
+  Packet packet;
   for (;;) {
-    if (1 == uart_read_bytes(port_, &byte, 1, portMAX_DELAY)) {
-      Packet packet(byte);
-      output_queue_.send_message(&packet);
+    if(packet_queue_.pull_message(&packet)) {
+      if (auto sent = packet.length() != uart_write_bytes(
+          port_,
+          packet.data(),
+          packet.length())) {
+        Serial.printf("ERROR: only %d bytes of %d sent!\n",
+            sent,
+            static_cast<int>(packet.length()));
+      }
     }
   }
 }

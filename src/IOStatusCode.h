@@ -1,7 +1,7 @@
 /*
- * StatusMessage.h
+ * IOStatusCode.h
  *
- *  Created on: Feb 15, 2026
+ *  Created on: Apr 12, 2026
  *      Author: Eric Mintz
  *
  * Copyright (c) 2026, Eric Mintz
@@ -21,13 +21,8 @@
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef STATUSMESSAGE_H_
-#define STATUSMESSAGE_H_
-
-#include "StatusScope.h"
-
-#include <driver/gpio.h>
-#include <stdint.h>
+#ifndef IOSTATUSCODE_H_
+#define IOSTATUSCODE_H_
 
 /**
  * @brief Pin I/O operation status codes. Must match declarations
@@ -50,25 +45,4 @@ enum class IOStatus {
   INVALID_STATE,        /**< INVALID_STATE Internal driver failure */
 };
 
-/**
- * @brief Response to host request. Must match its counterpart in
- *        `IOStatusMessage.javaa`
- *
- * Result of an operation, which is serialized and sent to the
- * client. The wire format is:
- *
- * 1. `0xFF`, the lead-in code
- * 2. Physical GPIO number
- * 3. Status code.
- * 4. I/O scope
- * 5. Status-specific side data. Must be 0 if N/A.
- * 6. `0x7F`, lead-out
- */
-struct StatusMessage {
-  IOStatus status_;        /**< Pin status */
-  StatusScope scope_;      /**< Scope (applicability) */
-  gpio_num_t pin_number_;  /**< The affected pin number */
-  uint8_t side_data_;      /**< Status-specific data */
-};
-
-#endif /* STATUSMESSAGE_H_ */
+#endif /* IOSTATUSCODE_H_ */

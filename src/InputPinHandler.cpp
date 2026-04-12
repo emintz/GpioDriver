@@ -24,15 +24,14 @@
 #include "SupportedPins.h"
 
 InputPinHandler::InputPinHandler (
-    PullQueueHT<uint8_t>& pin_change_queue,
-    PullQueueHT<StatusMessage>& status_queue) :
-        StatusReporter(status_queue),
-        status_queue_(status_queue),
+    PullQueueHT<Packet>& packet_queue) :
+        StatusReporter(packet_queue),
+        packet_queue_(packet_queue),
         pins_(),
         byte_to_pin_() {
   Serial.println("Creating pin map.");
   SupportedPins::apply_to_read(
-      InputPinHandler::PinMapMaker(pins_, pin_change_queue, status_queue_));
+      InputPinHandler::PinMapMaker(pins_, packet_queue_));
   for (const auto& [key, value] : pins_) {
     byte_to_pin_.emplace(static_cast<uint8_t>(key), key);
   }

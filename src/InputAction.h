@@ -31,7 +31,6 @@
 #include "OutputPinHandler.h"
 
 #include <PullQueueHT.h>
-#include <StatusMessage.h>
 #include <TaskAction.h>
 #include <stdint.h>
 
@@ -44,14 +43,8 @@
  *        and reports them to the host.
  */
 class InputAction : public TaskAction {
-  PullQueueHT<uint8_t>& pin_change_queue_;
-  PullQueueHT<StatusMessage>& status_queue_;
+  PullQueueHT<Packet>& packet_queue_;
   OutputPinHandler& output_handler_;
-
-  /**
-   * Process status queue messages until the queue is empty
-   */
-  void empty_status_queue(void);
 
 public:
   /**
@@ -59,12 +52,11 @@ public:
    *
    * @param pin_change_queue carries input pin value change
    *                         notifications.
-   * @param status_queue carries input pin status change
+   * @param packet_queue carries input pin status change
    *                     notifications
    */
   InputAction (
-      PullQueueHT<uint8_t>& pin_change_queue,
-      PullQueueHT<StatusMessage>& status_queue,
+      PullQueueHT<Packet>& packet_queue,
       OutputPinHandler& output_handler);
   virtual ~InputAction ();
 

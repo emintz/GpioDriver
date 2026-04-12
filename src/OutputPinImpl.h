@@ -26,9 +26,12 @@
 
 #include "BaseIOPin.h"
 #include "PinState.h"
+#include "Packet.h"
 #include "PullMode.h"
+#include "StatusScope.h"
 
 #include <driver/gpio.h>
+#include <PullQueueHT.h>
 /**
  * Handles a single output pin.
  */
@@ -40,15 +43,15 @@ public:
    * Constructor
    *
    * @param pin_number the GPIO pin identifier
-   * @param status_queue transmits status messages to the client
+   * @param packet_queue transmits mutations and status messages to the client
    */
   OutputPinImpl(
       const gpio_num_t pin_number,
-      PullQueueHT<StatusMessage>& status_queue) :
+      PullQueueHT<Packet>& packet_queue) :
           BaseIOPin(
               pin_number,
               StatusScope::OUTPUT_SCOPE,
-              status_queue) {
+              packet_queue) {
   }
 
   virtual ~OutputPinImpl() = default;

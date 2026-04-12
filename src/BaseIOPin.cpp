@@ -26,11 +26,10 @@
 BaseIOPin::BaseIOPin (
     const gpio_num_t pin_number,
     const StatusScope scope,
-    PullQueueHT<StatusMessage>& status_queue) :
-        StatusReporter(status_queue),
+    PullQueueHT<Packet>& packet_queue) :
+        StatusReporter(packet_queue),
         pin_number_(pin_number),
         scope_(scope),
-        status_queue_(status_queue),
         state_(PinState::CLOSED) {
 }
 

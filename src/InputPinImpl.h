@@ -25,7 +25,9 @@
 #define INPUTPINIMPL_H_
 #include "BaseIOPin.h"
 
-#include "StatusMessage.h"
+#include "IOStatusCode.h"
+#include "Packet.h"
+#include "StatusScope.h"
 
 #include <driver/gpio.h>
 #include <GpioChangeDetector.h>
@@ -36,14 +38,13 @@
 class InputPinImpl :
     public BaseIOPin,
     public VoidFunction {
-  PullQueueHT<uint8_t>& pin_change_queue_;
+  PullQueueHT<Packet>& packet_queue_;
   GpioChangeDetector pin_change_detector_;
 
 public:
   InputPinImpl(
       const gpio_num_t pin_number,
-      PullQueueHT<uint8_t>& pin_change_queue,
-      PullQueueHT<StatusMessage>& status_queue);
+      PullQueueHT<Packet>& packet_queue);
   virtual ~InputPinImpl () = default;
 
   /**

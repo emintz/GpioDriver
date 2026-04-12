@@ -24,9 +24,10 @@
 #ifndef BASEIOPIN_H_
 #define BASEIOPIN_H_
 
+#include "IOStatusCode.h"
+#include "Packet.h"
 #include "PinState.h"
 #include "PullMode.h"
-#include "StatusMessage.h"
 #include "StatusReporter.h"
 
 #include <driver/gpio.h>
@@ -39,7 +40,6 @@ class BaseIOPin : public StatusReporter {
 
   const gpio_num_t pin_number_;
   const StatusScope scope_;
-  PullQueueHT<StatusMessage>& status_queue_;
   PinState state_;
 
 
@@ -47,7 +47,7 @@ protected:
   BaseIOPin (
       const gpio_num_t pin_number,
       const StatusScope scope,
-      PullQueueHT<StatusMessage>& status_queue);
+      PullQueueHT<Packet>& packet_queue);
 
 
   /**

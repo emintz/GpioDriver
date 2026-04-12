@@ -24,6 +24,8 @@
 #ifndef UARTINPUTACTION_H_
 #define UARTINPUTACTION_H_
 
+#include "Packet.h"
+
 #include <driver/uart.h>
 #include <PullQueueHT.h>
 #include <stdint.h>
@@ -35,7 +37,7 @@
  */
 class UARTInputAction : public TaskAction {
   uart_port_t port_;
-  PullQueueHT<uint8_t>& input_queue_;
+  PullQueueHT<Packet>& output_queue_;
 public:
 
   /**
@@ -50,9 +52,9 @@ public:
    */
   UARTInputAction (
       uart_port_t port,
-      PullQueueHT<uint8_t>& input_queue) :
+      PullQueueHT<Packet>& output_queue) :
           port_(port),
-          input_queue_(input_queue) {
+          output_queue_(output_queue) {
 
   }
   virtual ~UARTInputAction () = default;

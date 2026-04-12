@@ -2,7 +2,7 @@
  * InputPinImpl.cpp
  *
  *  Created on: Mar 26, 2026
- *      Author: eric
+ *      Author: Eric Mintz
  *
  * Copyright (c) 2026, Eric Mintz
  * All Rights Reserved
@@ -25,13 +25,12 @@
 
 InputPinImpl::InputPinImpl (
     const gpio_num_t pin_number,
-    PullQueueHT<uint8_t>& pin_change_queue,
-    PullQueueHT<StatusMessage>& status_queue) :
+    PullQueueHT<Packet>& packet_queue) :
         BaseIOPin(
             pin_number,
             StatusScope::INPUT_SCOPE,
-            status_queue),
-         pin_change_queue_(pin_change_queue),
+            packet_queue),
+         packet_queue_(packet_queue),
          pin_change_detector_(
              pin_number,
              GpioChangeType::ANY_CHANGE,
@@ -42,7 +41,8 @@ void InputPinImpl::apply(void) {
   uint8_t pin_level =
       gpio_get_level(pin_number()) << 7
       | pin_number();
-  if (!pin_change_queue_.send_message_from_ISR(&pin_level)) {
+  Packet packet(pin_level);
+  if (!packet_queue_.send_message_from_ISR(&packet)) {
      send_status_from_ISR(
          IOStatus::LOST_INPUT,
          StatusScope::INPUT_SCOPE,

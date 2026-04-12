@@ -25,9 +25,11 @@
 #define INPUTPINHANDLER_H_
 
 #include "InputPinImpl.h"
+#include "IOStatusCode.h"
+#include "Packet.h"
 #include "PullMode.h"
-#include "StatusMessage.h"
 #include "StatusReporter.h"
+#include "StatusScope.h"
 
 #include <driver/gpio.h>
 #include <map>
@@ -38,7 +40,7 @@
 
 class InputPinHandler : protected StatusReporter {
 
-  PullQueueHT<StatusMessage>& status_queue_;
+  PullQueueHT<Packet>& packet_queue_;
   std::map<gpio_num_t, std::unique_ptr<InputPinImpl>> pins_;
   std::map<uint8_t, gpio_num_t> byte_to_pin_;
 
@@ -46,16 +48,13 @@ class InputPinHandler : protected StatusReporter {
     friend class InputPinHandler;
 
     std::map<gpio_num_t, std::unique_ptr<InputPinImpl>>& pins_;
-    PullQueueHT<uint8_t>& pin_change_queue_;
-    PullQueueHT<StatusMessage>& status_queue_;
+    PullQueueHT<Packet>& packet_queue_;
 
     PinMapMaker(
         std::map<gpio_num_t, std::unique_ptr<InputPinImpl>>& pins,
-        PullQueueHT<uint8_t>& pin_change_queue,
-        PullQueueHT<StatusMessage>& status_queue) :
+        PullQueueHT<Packet>& packet_queue) :
             pins_(pins),
-            pin_change_queue_(pin_change_queue),
-            status_queue_(status_queue) {
+            packet_queue_(packet_queue) {
     }
 
   public:
@@ -64,8 +63,7 @@ class InputPinHandler : protected StatusReporter {
           pin,
           std::make_unique<InputPinImpl>(
               pin,
-              pin_change_queue_,
-              status_queue_));
+              packet_queue_));
     }
   };
 
@@ -73,8 +71,7 @@ class InputPinHandler : protected StatusReporter {
 
 public:
   InputPinHandler (
-      PullQueueHT<uint8_t>& pin_change_queue,
-      PullQueueHT<StatusMessage>& status_queue);
+      PullQueueHT<Packet>& packet_queue);
   virtual ~InputPinHandler () = default;
 
   /**

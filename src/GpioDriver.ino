@@ -26,10 +26,10 @@
 #include "ConfigurationCommandCode.h"
 #include "InputAction.h"
 #include "InputPinHandler.h"
+#include "IOStatusCode.h"
 #include "OutputPinHandler.h"
 #include "PinAssignments.h"
 #include "PullMode.h"
-#include "StatusMessage.h"
 #include "StatusScope.h"
 #include "UARTDriver.h"
 
@@ -43,23 +43,20 @@
 
 static HardwareGpioChangeService gpio_change_service;
 static PullQueueHT<uint8_t> input_queue(1024);
-static PullQueueHT<uint8_t> pin_change_queue(1024);
-static PullQueueHT<StatusMessage> status_queue(128);
-static OutputPinHandler output_pin_handler(status_queue);
+static PullQueueHT<Packet> packet_queue(128);
+static OutputPinHandler output_pin_handler(packet_queue);
 static InputAction input_action(
-    pin_change_queue,
-    status_queue,
+    packet_queue,
     output_pin_handler);
 static InputPinHandler input_pin_handler(
-    pin_change_queue,
-    status_queue);
+    packet_queue);
 static TaskWithActionH input_processor(
     "Input",
     10,
     &input_action,
     4096);
 static CommandDispatcher command_dispatcher(
-    status_queue,
+    packet_queue,
     input_queue,
     input_pin_handler,
     output_pin_handler);
@@ -241,12 +238,9 @@ void setup() {
   report_boolean_status(
       "GPIO value change monitoring",
       gpio_change_service.begin());
-;  report_boolean_status(
-      "Pin change queue startup",
-      pin_change_queue.begin());
   report_boolean_status(
       "Status reporting queue startup",
-      status_queue.begin());
+      packet_queue.begin());
 
   report_boolean_status(
       "Input processor task startup",
