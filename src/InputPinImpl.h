@@ -2,7 +2,7 @@
  * InputPinImpl.h
  *
  *  Created on: Mar 26, 2026
- *      Author: eric
+ *      Author: Eric Mintz
  *
  * Copyright (c) 2026, Eric Mintz
  * All Rights Reserved
