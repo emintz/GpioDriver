@@ -66,6 +66,13 @@ static TaskWithActionH dispatcher_task(
     &command_dispatcher,
     4096);
 
+/**
+ * Write a pass/fail status message
+ *
+ * @param message message to write
+ * @param status true indicates success, false failure
+ * @return status, for chaining.
+ */
 static bool report_boolean_status(
     const char *message,
     bool status) {
@@ -73,12 +80,20 @@ static bool report_boolean_status(
   return status;
 }
 
+/**
+ * Blink (raise and lower) the specified pin.
+ *
+ * @param pin gpio pin to blink
+ */
 static void blink_it(uint8_t pin) {
   digitalWrite(pin, HIGH);
   delay(100);
   digitalWrite(pin, LOW);
 }
 
+/**
+ * Ripple (i.e. blink each once) the LEDs.
+ */
 static void ripple_once(void) {
   blink_it(BUILTIN_LED_PIN);
   blink_it(RED_LED_PIN);
@@ -86,12 +101,26 @@ static void ripple_once(void) {
   blink_it(GREEN_LED_PIN);
 }
 
+/**
+ * Display ripple pattern
+ *
+ * @param count number of times to display the pattern.
+ */
 static void ripple(int count) {
   for (int i = 0; i < count; ++i) {
     ripple_once();
   }
 }
 
+/**
+ * Sends a command to the server. Debug only.
+ *
+ * @param command_code what to do
+ * @param scope_code in what scope, INPUT, OUTPUT, etc.
+ * @param pin_number_code target GPIO pin or 0 if N/A.
+ * @param resistor_configuration_code pullup/pulldown configuration, or
+ *        PullMode.FLOAT if N/A.
+ */
 static void send_command(
     ConfigurationCommandCode command_code,
     StatusScope scope_code,
@@ -113,40 +142,9 @@ static void send_command(
   input_queue.send_message(&lead_out);
 }
 
-static void low_level_pin_open(void) {
-  input_pin_handler.open_pin(
-      static_cast<gpio_num_t>(BUILTIN_PUSH_BUTTON_PIN),
-      PullMode::UP);
-  input_pin_handler.open_pin(
-      static_cast<gpio_num_t>(RED_PUSH_BUTTON_PIN),
-      PullMode::UP);
-  input_pin_handler.open_pin(
-      static_cast<gpio_num_t>(YELLOW_PUSH_BUTTON_PIN),
-      PullMode::UP);
-  input_pin_handler.open_pin(
-      static_cast<gpio_num_t>(GREEN_PUSH_BUTTON_PIN),
-      PullMode::UP);
-
-  report_boolean_status(
-      "Opening red output pin",
-      output_pin_handler.open_pin(
-          static_cast<gpio_num_t>(RED_LED_PIN)));
-  report_boolean_status(
-      "Opening yellow output pin",
-      output_pin_handler.open_pin(
-          static_cast<gpio_num_t>(YELLOW_LED_PIN)));
-  report_boolean_status(
-      "Opening green output pin",
-      output_pin_handler.open_pin(
-          static_cast<gpio_num_t>(GREEN_LED_PIN)));
-  report_boolean_status(
-      "Opening built-in LED output pin",
-      output_pin_handler.open_pin(
-          static_cast<gpio_num_t>(BUILTIN_LED_PIN)));
-
-  delay(1);
-}
-
+/**
+ * Send commands to open the output (LED) pins. Debug only.
+ */
 static void open_pins_with_commands(void) {
   send_command(
     ConfigurationCommandCode::OPEN,
@@ -193,6 +191,12 @@ static void open_pins_with_commands(void) {
     delay(1);
 }
 
+/**
+ * Print a status message indicating a UART driver's installation
+ * status.
+ *
+ * @param port UART port.
+ */
 static void check_uart_driver(uart_port_t port) {
   Serial.printf(
       "UART port %d driver %s installed.\n",
