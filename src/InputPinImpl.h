@@ -34,7 +34,12 @@
 #include <PullQueueHT.h>
 #include <VoidFunction.h>
 
-
+/**
+ * @brief Low-level input operations
+ *
+ * Opens and closes input pins, monitors status, and takes action
+ * when the pin level changes.
+ */
 class InputPinImpl :
     public BaseIOPin,
     public VoidFunction {
@@ -54,7 +59,7 @@ public:
   virtual void apply(void) override;
 
   /**
-   * Open this pin for write (output)
+   * Open this pin for read (input)
    *
    * @param mode pullup/pulldown resistor configuration
    *
@@ -76,8 +81,7 @@ public:
 
   /**
    * Stops monitoring the pin level. Should be invoked
-   * immediately before closing the pin. The pin must be
-   * taken off-line if this call fails.
+   * immediately before closing the pin.
    */
   void stop() {
     pin_change_detector_.stop();

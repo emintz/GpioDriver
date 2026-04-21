@@ -41,6 +41,9 @@
 /**
  * @brief Input activity processor: marshals status and value changes
  *        and reports them to the host.
+ *
+ * Allows stand-alone running by echoing input pin levels to
+ * corresponding output pins. Disable this for production.
  */
 class InputAction : public TaskAction {
   PullQueueHT<Packet>& packet_queue_;

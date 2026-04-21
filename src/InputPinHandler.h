@@ -37,7 +37,13 @@
 #include <PullQueueHT.h>
 #include <stdint.h>
 
-
+/**
+ * @brief Command handler for input pins
+ *
+ * Processes commands that configure pins for input and maintains
+ * a list of open input pins. Output pins are handled separately;
+ * callers must prevent conflicts.
+ */
 class InputPinHandler : protected StatusReporter {
 
   PullQueueHT<Packet>& packet_queue_;

@@ -192,6 +192,46 @@ static void open_pins_with_commands(void) {
 }
 
 /**
+ * @brief Display a ripple pattern.
+ *
+ * Debug only.
+ *
+ */
+static void ripple_pins_for_debugging(void) {
+  pinMode(BUILTIN_LED_PIN, OUTPUT);
+  pinMode(RED_LED_PIN, OUTPUT);
+  pinMode(YELLOW_LED_PIN, OUTPUT);
+  pinMode(GREEN_LED_PIN, OUTPUT);
+
+  digitalWrite(BUILTIN_LED_PIN, LOW);
+  digitalWrite(RED_LED_PIN, LOW);
+  digitalWrite(YELLOW_LED_PIN, LOW);
+  digitalWrite(GREEN_LED_PIN, LOW);
+
+  pinMode(BUILTIN_PUSH_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(RED_PUSH_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(YELLOW_PUSH_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(GREEN_PUSH_BUTTON_PIN, INPUT_PULLUP);
+
+  ripple(10);
+
+  digitalWrite(BUILTIN_LED_PIN, digitalRead(BUILTIN_PUSH_BUTTON_PIN));
+  digitalWrite(RED_LED_PIN, digitalRead(RED_PUSH_BUTTON_PIN));
+  digitalWrite(YELLOW_LED_PIN, digitalRead(YELLOW_PUSH_BUTTON_PIN));
+  digitalWrite(GREEN_LED_PIN, digitalRead(GREEN_PUSH_BUTTON_PIN));
+}
+
+/**
+ * @brief Set up the pins for debugging.
+ *
+ * Remove for production.
+ */
+static void configure_pins_for_debugging(void) {
+  Serial.println("Opening GPIO pins.");
+  open_pins_with_commands();
+}
+
+/**
  * Print a status message indicating a UART driver's installation
  * status.
  *
@@ -219,22 +259,8 @@ void setup() {
       UARTDriver::install_unbuffered(UART_NUM_1));
   check_uart_driver(UART_NUM_1);
 
-  pinMode(BUILTIN_LED_PIN, OUTPUT);
-  pinMode(RED_LED_PIN, OUTPUT);
-  pinMode(YELLOW_LED_PIN, OUTPUT);
-  pinMode(GREEN_LED_PIN, OUTPUT);
-
-  digitalWrite(BUILTIN_LED_PIN, LOW);
-  digitalWrite(RED_LED_PIN, LOW);
-  digitalWrite(YELLOW_LED_PIN, LOW);
-  digitalWrite(GREEN_LED_PIN, LOW);
-
-  pinMode(BUILTIN_PUSH_BUTTON_PIN, INPUT_PULLUP);
-  pinMode(RED_PUSH_BUTTON_PIN, INPUT_PULLUP);
-  pinMode(YELLOW_PUSH_BUTTON_PIN, INPUT_PULLUP);
-  pinMode(GREEN_PUSH_BUTTON_PIN, INPUT_PULLUP);
-
-  ripple(10);
+  // Kill this for production.
+  ripple_pins_for_debugging();
 
   report_boolean_status(
       "Input queue (carries data from server) startup",
@@ -257,13 +283,8 @@ void setup() {
       input_pin_handler.in_use(static_cast<gpio_num_t>(GREEN_PUSH_BUTTON_PIN))
       ? "in use" : "available");
 
-  digitalWrite(BUILTIN_LED_PIN, digitalRead(BUILTIN_PUSH_BUTTON_PIN));
-  digitalWrite(RED_LED_PIN, digitalRead(RED_PUSH_BUTTON_PIN));
-  digitalWrite(YELLOW_LED_PIN, digitalRead(YELLOW_PUSH_BUTTON_PIN));
-  digitalWrite(GREEN_LED_PIN, digitalRead(GREEN_PUSH_BUTTON_PIN));
-
-  Serial.println("Opening GPIO pins.");
-  open_pins_with_commands();
+  // Kill this for production
+  configure_pins_for_debugging();
 }
 
 void loop() {
