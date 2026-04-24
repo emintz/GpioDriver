@@ -29,6 +29,7 @@ void UARTOutputAction::run(void) {
   Packet packet;
   for (;;) {
     if(packet_queue_.pull_message(&packet)) {
+//      Serial.printf("Writing %d bytes.\n", packet.length());
       if (auto sent = packet.length() != uart_write_bytes(
           port_,
           packet.data(),
@@ -37,6 +38,9 @@ void UARTOutputAction::run(void) {
             sent,
             static_cast<int>(packet.length()));
       }
+//      else {
+//        Serial.printf("Successfully sent %d bytes.\n", static_cast<int>(packet.length()));
+//      }
     }
   }
 }

@@ -24,20 +24,18 @@
 #ifndef UARTINPUTACTION_H_
 #define UARTINPUTACTION_H_
 
-#include "Packet.h"
-
 #include <driver/uart.h>
 #include <PullQueueHT.h>
 #include <stdint.h>
 #include <TaskAction.h>
 
 /**
- * Task action that reads data from a UART and forwards it
- * to a queue
+ * @brief Task action that reads data from a UART and forwards it
+ * to the input queue
  */
 class UARTInputAction : public TaskAction {
   uart_port_t port_;
-  PullQueueHT<Packet>& output_queue_;
+  PullQueueHT<uint8_t>& input_queue_;
 public:
 
   /**
@@ -52,16 +50,18 @@ public:
    */
   UARTInputAction (
       uart_port_t port,
-      PullQueueHT<Packet>& output_queue) :
+      PullQueueHT<uint8_t>& input_queue) :
           port_(port),
-          output_queue_(output_queue) {
+          input_queue_(input_queue) {
 
   }
   virtual ~UARTInputAction () = default;
 
   /**
-   * The forwarding loop, the task action that reads from
-   * the UART and writes to the queue. Be sure that the
+   * The forwarding loop
+   *
+   * Reads bytes from the I/O UART
+   * and them writes to the queue. Be sure that the
    * UART driver has been installed for this instance's
    * port before starting the loop (i.e. starting the
    * enclosing task).

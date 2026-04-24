@@ -32,6 +32,8 @@
 #include "PullMode.h"
 #include "StatusScope.h"
 #include "UARTDriver.h"
+#include "UARTInputAction.h"
+#include "UARTOutputAction.h"
 
 #include <driver/uart.h>
 #include <GpioChangeDetector.h>
@@ -52,7 +54,7 @@ static InputPinHandler input_pin_handler(
     packet_queue);
 static TaskWithActionH input_processor(
     "Input",
-    10,
+    6,
     &input_action,
     4096);
 static CommandDispatcher command_dispatcher(
@@ -62,10 +64,21 @@ static CommandDispatcher command_dispatcher(
     output_pin_handler);
 static TaskWithActionH dispatcher_task(
     "Dispatcher",
-    11,
+    7,
     &command_dispatcher,
     4096);
-
+static UARTInputAction uart_input_action(UART_NUM_2, input_queue);
+static TaskWithActionH uart_input_task(
+    "UART Input",
+    9,
+    &uart_input_action,
+    4096);
+static UARTOutputAction uart_output_action(UART_NUM_2, packet_queue);
+static TaskWithActionH uart_output_task(
+    "UART Output",
+    8,
+    &uart_output_action,
+    4096);
 /**
  * Write a pass/fail status message
  *
@@ -238,10 +251,16 @@ static void configure_pins_for_debugging(void) {
  * @param port UART port.
  */
 static void check_uart_driver(uart_port_t port) {
+  auto is_installed = uart_is_driver_installed(port);
   Serial.printf(
       "UART port %d driver %s installed.\n",
       static_cast<int>(port),
-      uart_is_driver_installed(port) ? "is" : "is not");
+      is_installed ? "is" : "is not");
+  if (is_installed) {
+    Serial.printf("Hardware FIFO buffer length for port 2 is: %d.\n",
+        UART_HW_FIFO_LEN(port));
+
+  }
 }
 
 void setup() {
@@ -250,17 +269,19 @@ void setup() {
       __DATE__, __TIME__);
 
   check_uart_driver(UART_NUM_0);
-  check_uart_driver(UART_NUM_1);
-  Serial.printf("Hardware FIFO buffer length for port 1 is: %d.\n",
-      UART_HW_FIFO_LEN(UART_NUM_1));
+  check_uart_driver(UART_NUM_2);
 
   report_boolean_status(
-      "Installation of UART driver for port 1",
-      UARTDriver::install_unbuffered(UART_NUM_1));
-  check_uart_driver(UART_NUM_1);
+      "Installation of UART driver for port 2",
+      UARTDriver::install_unbuffered(
+          UART_NUM_2,
+          16,
+          17,
+          115200));
+  check_uart_driver(UART_NUM_2);
 
   // Kill this for production.
-  ripple_pins_for_debugging();
+//  ripple_pins_for_debugging();
 
   report_boolean_status(
       "Input queue (carries data from server) startup",
@@ -271,20 +292,28 @@ void setup() {
   report_boolean_status(
       "Status reporting queue startup",
       packet_queue.begin());
-
-  report_boolean_status(
-      "Input processor task startup",
-      input_processor.start());
   report_boolean_status(
       "Command dispatcher task startup",
       dispatcher_task.start());
 
-  Serial.printf("The GREEN LED control pin is %s.\n",
-      input_pin_handler.in_use(static_cast<gpio_num_t>(GREEN_PUSH_BUTTON_PIN))
-      ? "in use" : "available");
+  // Production processing
+  report_boolean_status(
+      "UART output task startup",
+      uart_output_task.start());
+  report_boolean_status(
+      "UART input task startup",
+      uart_input_task.start());
 
   // Kill this for production
-  configure_pins_for_debugging();
+//  configure_pins_for_debugging();
+
+//  report_boolean_status(
+//      "Input processor task startup",
+//      input_processor.start());
+  //
+  //  Serial.printf("The GREEN LED control pin is %s.\n",
+  //      input_pin_handler.in_use(static_cast<gpio_num_t>(GREEN_PUSH_BUTTON_PIN))
+  //      ? "in use" : "available");
 }
 
 void loop() {

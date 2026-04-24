@@ -77,6 +77,11 @@ InputValueType CommandDispatcher::type_of(uint8_t input) {
 }
 
 void CommandDispatcher::dispatch_command(void) {
+  Serial.printf("Dispatching Command: %02x scope: %02x pin: %02x, resistor config: %02x\n",
+      command_byte_,
+      scope_byte_,
+      pin_byte_,
+      resistor_config_byte_);
   switch (static_cast<StatusScope>(scope_byte_)) {
   case StatusScope::INPUT_SCOPE:
     dispatch_to_input();

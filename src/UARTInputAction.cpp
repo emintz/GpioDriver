@@ -25,10 +25,15 @@
 
 void UARTInputAction::run(void) {
   uint8_t byte = 0;
+  int count = 0;
   for (;;) {
     if (1 == uart_read_bytes(port_, &byte, 1, portMAX_DELAY)) {
-      Packet packet(byte);
-      output_queue_.send_message(&packet);
+//      count = (count + 1) % 32;
+//      if (!count) {
+//        Serial.println();
+//      }
+//      Serial.printf("%02x ", static_cast<int>(byte));
+      input_queue_.send_message(&byte);
     }
   }
 }

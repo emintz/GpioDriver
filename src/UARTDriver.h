@@ -49,6 +49,10 @@ public:
    *        other variants.
    * @param baud_rate transmission speed in nominal bits per second.
    *        Defaults to 115200.
+   * @param transmit_pin the GPIO pin that pushes bits from this server
+   *        to the client
+   * @param receive_pin the GPIO pin that receives bits sent by the
+   *        client
    * @return `true` if the driver is already installed or was
    *         installed successfully; `false` if installation failed.
    *         When the invocation succeeds (i.e. returns `true`), the
@@ -56,6 +60,8 @@ public:
    */
   static bool install_unbuffered(
       uart_port_t port,
+      int transmit_pin,
+      int receive_pin,
       uint32_t baud_rate = 115200);
 
   /**

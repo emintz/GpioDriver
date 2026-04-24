@@ -55,5 +55,6 @@ bool InputPinImpl::open(PullMode mode) {
       set_direction(GPIO_MODE_INPUT)
       && configure_pull_mode(mode);
       set_state(status ? PinState::OPEN : PinState::OFFLINE);
+//      gpio_dump_io_configuration(stdout, (1ULL << pin_number()));
       return status;
 }

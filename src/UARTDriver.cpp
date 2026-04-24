@@ -27,10 +27,22 @@
 
 bool UARTDriver::install_unbuffered(
     uart_port_t port,
+    int transmit_pin,
+    int receive_pin,
     uint32_t baud_rate) {
   bool result = uart_is_driver_installed(port);
 
   if (!result) {
+    uart_config_t uart_config = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .rx_flow_ctrl_thresh = 0,
+        .source_clk = UART_SCLK_APB,
+    };
+
     result =
         (ESP_OK == uart_driver_install(
             port,
@@ -39,18 +51,15 @@ bool UARTDriver::install_unbuffered(
             0,
             NULL,
             0))
-        && (ESP_OK == uart_set_word_length(
+        && (ESP_OK == uart_set_pin(
             port,
-            UART_DATA_8_BITS))
-        && (ESP_OK == uart_set_stop_bits(
+            transmit_pin,
+            receive_pin,
+            UART_PIN_NO_CHANGE,
+            UART_PIN_NO_CHANGE))
+        && (ESP_OK == uart_param_config(
             port,
-            UART_STOP_BITS_1))
-        && (ESP_OK == uart_set_parity(
-            port,
-            UART_PARITY_DISABLE))
-        && (ESP_OK == uart_set_baudrate(
-            port,
-            baud_rate));
+            &uart_config));
   }
 
   return result;

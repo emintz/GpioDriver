@@ -21,14 +21,21 @@
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <Arduino.h>
+
 #include "OutputPinImpl.h"
 
 bool OutputPinImpl::open(void) {
-  auto status =
-      set_direction(GPIO_MODE_OUTPUT)
-      && configure_pull_mode(PullMode::FLOAT);
-  set_state(status ? PinState::OPEN : PinState::OFFLINE);
-  return status;
+  // TODO: figure how to use the low level API.
+//  auto status =
+//      set_direction(GPIO_MODE_OUTPUT)
+//      && configure_pull_mode(PullMode::FLOAT);
+//  set_state(status ? PinState::OPEN : PinState::OFFLINE);
+//  return status;
+  pinMode(static_cast<uint8_t>(pin_number()), OUTPUT);
+  set_state(PinState::OPEN);
+//  gpio_dump_io_configuration(stdout, (1ULL << pin_number()));
+  return true;
 }
 
 bool OutputPinImpl::set_level(uint32_t level) {
