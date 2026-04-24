@@ -39,8 +39,8 @@ bool OutputPinImpl::open(void) {
 }
 
 bool OutputPinImpl::set_level(uint32_t level) {
-  Serial.printf("Setting pin %d to %d.\n",
-      static_cast<int>(pin_number()), level);
+//  Serial.printf("Setting pin %d to %d.\n",
+//      static_cast<int>(pin_number()), level);
   return send_esp_status(
       gpio_set_level(pin_number(), level),
       0);
