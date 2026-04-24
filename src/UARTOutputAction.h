@@ -33,6 +33,9 @@
 
 /**
  * @brief Task action that writes packets to a serial port.
+ *
+ * Reads bytes from the output queue and writes them to the
+ * UART.
  */
 class UARTOutputAction : public TaskAction {
   uart_port_t port_;
