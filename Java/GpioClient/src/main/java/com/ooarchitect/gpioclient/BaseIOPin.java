@@ -35,7 +35,9 @@ public interface BaseIOPin extends AutoCloseable {
 
   /**
    * Close the pin if it is open. Do nothing if the pin is closed or off-line.
+   * Overrides {@link AutoCloseable#close()}
    */
+  @Override
   void close();
 
   /**

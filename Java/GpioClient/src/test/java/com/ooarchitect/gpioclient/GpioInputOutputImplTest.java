@@ -110,6 +110,15 @@ class GpioInputOutputImplTest {
     inOrder.verify(serialPort).writeBytes(buffer, buffer.length, 0);
   }
 
+  private void verifyMutationSent(
+      ESP32s2Pin pin,
+      Level level) {
+    var buffer = new byte[] {
+        (byte) (pin.number() | level.value()),
+    };
+    inOrder.verify(serialPort).writeBytes(buffer, buffer.length, 0);
+  }
+
   private void verifyStatusConsumed(
       IOStatusCode code,
       StatusScope scope,
@@ -197,6 +206,23 @@ class GpioInputOutputImplTest {
     receiveMutation(ESP32s2Pin.GPIO_18, Level.HIGH);
     Truth.assertThat(inputPin.value()).isEqualTo(Level.HIGH);
 
+    inputPin.close();
+    Truth.assertThat(gpioInputOutput.available(ESP32s2Pin.GPIO_18)).isFalse();
+    Truth.assertThat(gpioInputOutput.active(ESP32s2Pin.GPIO_18)).isFalse();
+    Truth.assertThat(gpioInputOutput.offline(ESP32s2Pin.GPIO_18)).isFalse();
+    Truth.assertThat(inputPin.active()).isFalse();
+    Truth.assertThat(inputPin.offline()).isFalse();
+
+    receiveStatus(
+        ESP32s2Pin.GPIO_18,
+        IOStatusCode.CLOSE_SUCCEEDED,
+        StatusScope.INPUT,
+        PIN_LOW);
+    Truth.assertThat(gpioInputOutput.available(ESP32s2Pin.GPIO_18)).isTrue();
+    Truth.assertThat(gpioInputOutput.active(ESP32s2Pin.GPIO_18)).isFalse();
+    Truth.assertThat(gpioInputOutput.offline(ESP32s2Pin.GPIO_18)).isFalse();
+
+
     // GpioInputOutputImpl.openForInput() must send an open request to the
     // server.
     verifyCommandSent(
@@ -213,6 +239,17 @@ class GpioInputOutputImplTest {
     verifyMutationReceived();
     inOrder.verify(levelConsumer).accept(Level.LOW);
     inOrder.verify(levelConsumer).accept(Level.HIGH);
+    verifyCommandSent(
+        ConfigurationCommandCode.CLOSE,
+        StatusScope.INPUT,
+        ESP32s2Pin.GPIO_18,
+        PullMode.FLOAT);
+    verifyStatusReceived();
+    verifyStatusConsumed(
+        IOStatusCode.CLOSE_SUCCEEDED,
+        StatusScope.INPUT,
+        ESP32s2Pin.GPIO_18,
+        PIN_LOW);
     inOrder.verifyNoMoreInteractions();
   }
 
@@ -300,6 +337,38 @@ class GpioInputOutputImplTest {
     Truth.assertThat(outputPin.active()).isTrue();
     Truth.assertThat(outputPin.offline()).isFalse();
 
+    outputPin.send(Level.HIGH);
+    Truth.assertThat(gpioInputOutput.available(ESP32s2Pin.GPIO_18)).isFalse();
+    Truth.assertThat(gpioInputOutput.active(ESP32s2Pin.GPIO_18)).isTrue();
+    Truth.assertThat(gpioInputOutput.offline(ESP32s2Pin.GPIO_18)).isFalse();
+    Truth.assertThat(outputPin.active()).isTrue();
+    Truth.assertThat(outputPin.offline()).isFalse();
+
+    outputPin.send(Level.LOW);
+    Truth.assertThat(gpioInputOutput.available(ESP32s2Pin.GPIO_18)).isFalse();
+    Truth.assertThat(gpioInputOutput.active(ESP32s2Pin.GPIO_18)).isTrue();
+    Truth.assertThat(gpioInputOutput.offline(ESP32s2Pin.GPIO_18)).isFalse();
+    Truth.assertThat(outputPin.active()).isTrue();
+    Truth.assertThat(outputPin.offline()).isFalse();
+
+    outputPin.close();
+    Truth.assertThat(gpioInputOutput.available(ESP32s2Pin.GPIO_18)).isFalse();
+    Truth.assertThat(gpioInputOutput.active(ESP32s2Pin.GPIO_18)).isFalse();
+    Truth.assertThat(gpioInputOutput.offline(ESP32s2Pin.GPIO_18)).isFalse();
+    Truth.assertThat(outputPin.active()).isFalse();
+    Truth.assertThat(outputPin.offline()).isFalse();
+
+
+    receiveStatus(
+        ESP32s2Pin.GPIO_18,
+        IOStatusCode.CLOSE_SUCCEEDED,
+        StatusScope.OUTPUT,
+        PIN_LOW);
+    Truth.assertThat(gpioInputOutput.available(ESP32s2Pin.GPIO_18)).isTrue();
+    Truth.assertThat(gpioInputOutput.active(ESP32s2Pin.GPIO_18)).isFalse();
+    Truth.assertThat(gpioInputOutput.offline(ESP32s2Pin.GPIO_18)).isFalse();
+
+
     verifyCommandSent(
         ConfigurationCommandCode.OPEN,
         StatusScope.OUTPUT,
@@ -312,6 +381,22 @@ class GpioInputOutputImplTest {
         StatusScope.OUTPUT,
         ESP32s2Pin.GPIO_18,
         PIN_LOW);
+
+    verifyMutationSent(ESP32s2Pin.GPIO_18, Level.HIGH);
+    verifyMutationSent(ESP32s2Pin.GPIO_18, Level.LOW);
+
+    verifyCommandSent(
+        ConfigurationCommandCode.CLOSE,
+        StatusScope.OUTPUT,
+        ESP32s2Pin.GPIO_18,
+        PullMode.FLOAT);
+
+    verifyStatusConsumed(
+        IOStatusCode.CLOSE_SUCCEEDED,
+        StatusScope.OUTPUT,
+        ESP32s2Pin.GPIO_18,
+        PIN_LOW);
+
     inOrder.verifyNoMoreInteractions();
   }
 
