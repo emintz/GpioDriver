@@ -26,13 +26,15 @@ import java.util.function.Consumer;
 
 /**
  * Base low level GPIO pin class
+ *
+ * @param <T> the logical GPIO ID enumeration class
  */
-abstract class GpioPinProxy {
+public abstract class GpioPinProxy<T extends Enum<T> & GpioPinNumber> {
 
   private static final byte LOW = 0;
 
-  private final byte pinNumber;
-  private final OutputChannel outputChannel;
+  private final T pinNumber;
+  private final Transmitter<T> outputChannel;
   private final StatusScope scope;
   private final ReentrantLock lock;
   private Consumer<IOStatusCode> statusCallback;
@@ -48,8 +50,8 @@ abstract class GpioPinProxy {
    *              or {@link StatusScope#OUTPUT}
    */
   protected GpioPinProxy(
-      byte pinNumber,
-      OutputChannel outputChannel,
+      T pinNumber,
+      Transmitter<T> outputChannel,
       StatusScope scope) {
     this.pinNumber = pinNumber;
     this.outputChannel = outputChannel;
@@ -181,8 +183,12 @@ abstract class GpioPinProxy {
   protected void onReset() {
   }
 
-  protected byte pinNumber() {
+  protected T pinNumber() {
     return pinNumber;
+  }
+
+  protected byte rawPinNumber() {
+    return pinNumber.number();
   }
 
   /**
@@ -195,7 +201,7 @@ abstract class GpioPinProxy {
       IOStatusCode code,
       byte sideData) {
     Consumer<IOStatusCode> activeStatusCallback = statusCallback;
-    boolean result = false;
+    boolean result;
     try {
       lock.lock();
       result = PinTransitionTable.causesTransition(code);
@@ -248,7 +254,7 @@ abstract class GpioPinProxy {
    *         {@link IOStatusCode#RESET_SUCCEEDED} message.
    */
   private boolean resetRequested() {
-    boolean result = false;
+    boolean result;
     try {
       lock.lock();
       result = sendConfigurationCommand(ConfigurationCommandCode.RESET, PullMode.FLOAT);
@@ -274,20 +280,19 @@ abstract class GpioPinProxy {
   protected boolean sendConfigurationCommand(
       ConfigurationCommandCode commandCode,
       PullMode resistorConfiguration) {
-    var message = new byte[] {
-        (byte) commandCode.ordinal(),
-        (byte) scope.ordinal(),
+    return outputChannel.sendCommand(
+        commandCode,
+        scope,
         pinNumber,
-        (byte) resistorConfiguration.ordinal(),
+        resistorConfiguration
+    );
 
-    };
-    return outputChannel.send(message);
   }
 
   protected boolean sendMutation(byte mutation) {
     return
         active()
-        && outputChannel.send(mutation);
+        && outputChannel.sendMutation(mutation);
   }
 
   /**

@@ -19,6 +19,11 @@
 
 package com.ooarchitect.gpioclient;
 
-public interface InputPin extends BaseIOPin<InputPinProxy> {
+/**
+ * The input pin-specific API.
+ *
+ */
+public interface InputPin
+    extends BaseIOPin {
   Level value();
 }

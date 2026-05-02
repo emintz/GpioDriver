@@ -21,7 +21,9 @@ package com.ooarchitect.gpioclient;
 import com.google.common.annotations.VisibleForTesting;
 import com.ooarchitect.statemachine.TransitionTable;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -52,7 +54,7 @@ import java.util.function.Consumer;
  * </ol>
  * </p>
  */
-class ResponseDispatcher<T extends Enum<? extends GpioPinNumber>>
+class ResponseDispatcher<T extends Enum<T> & GpioPinNumber>
     implements Runnable {
 
   /**
@@ -153,7 +155,7 @@ class ResponseDispatcher<T extends Enum<? extends GpioPinNumber>>
           .build();
 
   private final ByteSupplier inputSource;
-  private final PinValueConsumer valueConsumer;
+  private final BiConsumer<T, Level> mutationConsumer;
   Consumer<IOStatusMessage<T>> statusConsumer;
 
   private State currentState;
@@ -161,7 +163,7 @@ class ResponseDispatcher<T extends Enum<? extends GpioPinNumber>>
   private byte rawStatus;
   private byte physicalPinNumber;
   private byte sideData;
-  private final PhysicalToGpioPin<T> pinConversion;
+  private final Map<Integer, T> pinConversion;
   private final AtomicBoolean keepRunning;
 
   /**
@@ -187,13 +189,20 @@ class ResponseDispatcher<T extends Enum<? extends GpioPinNumber>>
     };
   }
 
+  private void forwardMutation(byte mutation) {
+    T gpioPin = pinConversion.get((mutation & 0x7F));
+    if (gpioPin != null) {
+      mutationConsumer.accept(gpioPin, 0 == (mutation & 0x80) ? Level.LOW : Level.HIGH);
+    }
+  }
+
   ResponseDispatcher(
       ByteSupplier inputSource,
-      PinValueConsumer valueConsumer,
+      BiConsumer<T, Level> mutationConsumer,
       Consumer<IOStatusMessage<T>> statusConsumer,
-      PhysicalToGpioPin<T> physicalToGpioPin) {
+      Map<Integer, T> physicalToGpioPin) {
     this.inputSource = inputSource;
-    this.valueConsumer = valueConsumer;
+    this.mutationConsumer = mutationConsumer;
     this.statusConsumer = statusConsumer;
 
     currentState = State.CREATED;
@@ -224,7 +233,7 @@ class ResponseDispatcher<T extends Enum<? extends GpioPinNumber>>
         // Cannot happen.
         break;
       case MUTATING:
-        valueConsumer.accept(input);
+        forwardMutation(input);
         break;
       case RECEIVING_STATUS_MESSAGE:
         break;
@@ -244,7 +253,7 @@ class ResponseDispatcher<T extends Enum<? extends GpioPinNumber>>
         var receivedStatus = new IOStatusMessage<>(
             IOStatusCode.values()[rawStatus],
             StatusScope.values()[rawScope],
-            pinConversion.toLogical(physicalPinNumber),
+            pinConversion.get((int) physicalPinNumber),
             sideData);
         statusConsumer.accept(receivedStatus);
         break;
@@ -264,13 +273,5 @@ class ResponseDispatcher<T extends Enum<? extends GpioPinNumber>>
     } catch (InterruptedException expected) {
       // Normal exit
     }
-  }
-
-  /**
-   * Stop the run loop. This is useful for testing, but needs
-   * beefing up for production.
-   */
-  public void stop() {
-    ;Thread.currentThread().interrupt();
   }
 }

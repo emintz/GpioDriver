@@ -1,5 +1,5 @@
 /*
- * GpioInputOutput.java
+ * GPInputOutput.java
  *
  * Copyright (C) 2026  Eric Mintz
  *
@@ -16,159 +16,83 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.ooarchitect.gpioclient;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.jspecify.annotations.Nullable;
+package com.ooarchitect.gpioclient;
 
 import java.util.function.Consumer;
 
 /**
- * Main user interface with the BPIO I/O system. Provides basic control
- * and
+ * General Purpose Pin Input/Output API.
+ *
+ * @param <T> Pin enumeration type. Note that each supported
+ *            enumeration supports a specific ESP-32 variant.
  */
-public class GpioInputOutput<T extends Enum<? extends GpioPinNumber>> {
-  private final GpioReader<T> reader;
-  private final GpioWriter<T> writer;
-  // The dispatcher is a bridge between the input and
-  // the reader and the writer. We park it here
-  // for convenience. Please leave it even though
-  // this class doesn't reference it.
-  @SuppressWarnings("unused")
-  private final ResponseDispatcher<T> dispatcher;
-  private Thread dispatchThread;
+public interface GpioInputOutput<T extends Enum<T> & GpioPinNumber>  {
 
   /**
-   * Routes incoming status messages to their handlers. Routing
-   * is based on the message scope.
+   * Queries a pin's activity. A pin is active if and only if it is open for
+   * input or output (but never both). A pin is either active or inactive.
+   * Inactive pins can be either available or off-line.
    *
-   * @param <T> Server microcontroller type
-   *
-   * @see StatusScope
+   * @param pin the GPIO pin to query
+   * @return {@code true} if the pin is active or {@code false} if it is
+   *         inactive.
    */
-  @VisibleForTesting
-  static class StatusRouter<T extends Enum<? extends GpioPinNumber>>
-      implements Consumer<IOStatusMessage<T>> {
+  boolean active(T pin);
 
-    private final GpioReader<T> reader;
-    private final GpioWriter<T> writer;
+  /**
+   * Queries a pin's availability. A pin is available if and only if it can be
+   * opened for input or output (but not both). An unavailable pin is either
+   * in use (i.e. open) or off-line (i.e. in an invalid state)
+   *
+   * @param pin the GPIO pin to query
+   * @return {@code true} if the pin is available; {@code false} otherwise.
+   */
+  boolean available(T pin);
 
-    /**
-     * Creates a {@link StatusRouter}
-     *
-     * @param reader handles input-related status messages
-     * @param writer handles output-related status messages
-     */
-    StatusRouter(GpioReader<T> reader, GpioWriter<T> writer) {
-      this.reader = reader;
-      this.writer = writer;
-    }
+  /**
+   * Queries a pin's state. A pin is offline if and only if it is in an
+   * invalid state (a.k.a. "wedged"). Note that a pin is either offline
+   * or online. An online pin can be either in use or available.
+   *
+   * @param pin the GPIO pin to query
+   * @return {@code true} if the pin is off-line ("wedged") and {@code false} otherwise.
+   */
+  boolean offline(T pin);
 
-    /**
-     * Routes a status message to its handler
-     *
-     * @param statusMessage message to route.
-     */
-    @Override
-    public void accept(IOStatusMessage<T> statusMessage) {
-      switch (statusMessage.scope()) {
-        case INPUT -> reader.dispatchToTargetPin(statusMessage);
-        case OUTPUT -> writer.dispatchToTargetPin(statusMessage);
-        case INPUT_OUTPUT -> {
-          reader.dispatchToTargetPin(statusMessage);
-          writer.dispatchToTargetPin(statusMessage);
-        }
-        case SERVER -> {
-          reader.dispatchToAllPins(statusMessage);
-          writer.dispatchToAllPins(statusMessage);
-        }
-      }
-    }
-  }
-
-  GpioInputOutput (
-      GpioReader<T> reader,
-      GpioWriter<T> writer,
-      ResponseDispatcher<T> dispatcher) {
-    this.reader = reader;
-    this.writer = writer;
-    this.dispatcher = dispatcher;
-    dispatchThread = null;
-  }
-
-  public boolean active(T pin) {
-    var readerActive = reader.active(pin);
-    var writerActive = writer.active(pin);
-    if (readerActive && writerActive) {
-      throw new IllegalStateException(
-          "Both reader and writer active on pin: " + pin);
-    }
-    return readerActive || writerActive;
-  }
-
-  public boolean available(T pin) {
-    return reader.available(pin) && writer.available(pin);
-  }
-
-  public boolean offline(T pin) {
-    return reader.offline(pin) || writer.offline(pin);
-  }
-
-  @Nullable
-  public InputPin openForInput(
+  /**
+   * Opens the specified pin for input
+   *
+   * @param pin                   the GPIO pin to open
+   * @param resisterConfiguration Pullup/Pulldown resistor configuration
+   * @param levelConsumer         Called when the pin level changes
+   * @param statusCallback        Called when the pin reports status
+   * @return an {@link InputPin} bound to the specified {@code pin} if successful,
+   * {@code null} otherwise.
+   */
+  InputPin openForInput(
       T pin,
-      PullMode resistorConfiguration,
-      PinLevelConsumer levelConsumer,
-      Consumer<IOStatusCode> statusCallback) {
-    return available(pin)
-        ? reader.open(pin, resistorConfiguration, levelConsumer, statusCallback)
-        : null;
-  }
+      PullMode resisterConfiguration,
+      Consumer<Level> levelConsumer,
+      Consumer<IOStatusCode> statusCallback);
 
-  @Nullable
-  public OutputPin openForOutput(
-      T pinId,
-      Consumer<IOStatusCode> statusCallback) {
-    return available(pinId)
-        ? writer.open(pinId, statusCallback)
-        : null;
-  }
+  /**
+   * Opens the specified pin for output
+   *
+   * @param pin            the GPIO pin to open
+   * @param statusCallback invoked when the pin reports its status
+   * @return an {@link OutputPin} bound to the specified {@code pin} if successful,
+   * {@code null} otherwise.
+   */
+  OutputPin openForOutput(
+      T pin,
+      Consumer<IOStatusCode> statusCallback);
 
- synchronized  public void start() {
-    if (dispatchThread == null) {
-      dispatchThread = new Thread(dispatcher);
-      dispatchThread.start();
-    }
-  }
-
-  synchronized void stop() {
-    if (dispatchThread != null) {
-      dispatcher.stop();
-      try {
-        dispatchThread.join();
-        dispatchThread = null;
-      } catch (InterruptedException expected) {
-        // Normal exit
-      }
-    }
-  }
-
-  public static <T extends Enum<? extends GpioPinNumber>> GpioInputOutput<T> create(
-      Class<T> pinClass,
-      OutputChannel outputChannel,
-      ByteSupplier inputChannel) {
-    PhysicalToGpioPin<T> physicalToGpioPin = new PhysicalToGpioPin<>(pinClass);
-    var reader = new GpioReader<>(outputChannel, physicalToGpioPin);
-    var writer = new GpioWriter<>(outputChannel, physicalToGpioPin);
-    var statusRouter = new StatusRouter<>(reader, writer);
-    var responseDispatcher = new ResponseDispatcher<>(
-        inputChannel,
-        reader,
-        statusRouter,
-        physicalToGpioPin);
-    return new GpioInputOutput<>(
-        reader,
-        writer,
-        responseDispatcher);
-  }
+  /**
+   * Builds out the class and starts processing input.
+   *
+   * @return {@code true} if processing started successfully,
+   *         {@code false} otherwise.
+   */
+  boolean start();
 }

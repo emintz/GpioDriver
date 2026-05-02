@@ -31,9 +31,7 @@ import java.util.function.BiConsumer;
  * @param <T> GPIO pin enumeration that matches the ESP-32
  *           server model.
  */
-class PhysicalToGpioPin<T extends Enum<? extends GpioPinNumber>> {
-  // TODO: in an EnumMap<T, V> T must extend Enum<T> which ours
-  //       does not, so we cheat and use a HashMap.
+class PhysicalToGpioPin<T extends Enum<T> & GpioPinNumber> {
   // TODO: consider replacing with a factory that returns an ImmutableMap.
   private final HashMap<Integer, T> physicalToLogical;
 
@@ -45,7 +43,7 @@ class PhysicalToGpioPin<T extends Enum<? extends GpioPinNumber>> {
   PhysicalToGpioPin(Class<T> gpioPinType) {
     physicalToLogical = new HashMap<>();
     for (T logicalGPIO : gpioPinType.getEnumConstants()) {
-      int number = ((GpioPinNumber)logicalGPIO).number();
+      int number = logicalGPIO.number();
       physicalToLogical.put(number, logicalGPIO);
     }
   }

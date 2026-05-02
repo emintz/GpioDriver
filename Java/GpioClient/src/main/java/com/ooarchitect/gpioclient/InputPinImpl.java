@@ -1,5 +1,4 @@
 
-
 /*
  * InputPinImpl.java
  *
@@ -20,17 +19,15 @@
  */
 package com.ooarchitect.gpioclient;
 
-public class InputPinImpl extends BaseIOPinImpl<InputPinProxy> implements InputPin {
+public class InputPinImpl<T extends Enum<T> & GpioPinNumber>
+    extends BaseIOPinImpl<T, InputPinProxy<T>> implements InputPin {
 
-  InputPinImpl(InputPinProxy proxy) {
+  InputPinImpl(InputPinProxy<T> proxy) {
       super(proxy);
   }
 
   @Override
   public Level value() {
-    var rawLevel = proxy().value();
-    return rawLevel == 0
-        ? Level.LOW
-        : Level.HIGH;
+    return proxy().value();
   }
 }

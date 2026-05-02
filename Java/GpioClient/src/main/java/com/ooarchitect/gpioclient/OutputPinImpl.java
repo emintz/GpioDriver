@@ -18,9 +18,10 @@
  */
 package com.ooarchitect.gpioclient;
 
-public class OutputPinImpl extends BaseIOPinImpl<OutputPinProxy> implements OutputPin {
+public class OutputPinImpl<T extends Enum<T> & GpioPinNumber>
+    extends BaseIOPinImpl<T, OutputPinProxy<T>> implements OutputPin {
 
-  OutputPinImpl(OutputPinProxy proxy) {
+  OutputPinImpl(OutputPinProxy<T> proxy) {
     super(proxy);
   }
 

@@ -19,13 +19,17 @@
 package com.ooarchitect.gpioclient;
 
 /**
- * Base class for user-visible GPIO pin proxies.
+ * Base class for user-visible GPIO pin proxies. A wrapper around a pin proxy
+ * that provides low level pin functionality. Note that the generic proxy is
+ * direction-agnostic.
  */
-public class BaseIOPinImpl<T extends GpioPinProxy>
-    implements BaseIOPin<T> {
-  private final T proxy;
+public class BaseIOPinImpl<
+    T extends Enum<T> & GpioPinNumber,
+    P extends GpioPinProxy<T>>
+    implements BaseIOPin {
+  private final P proxy;
 
-  protected BaseIOPinImpl(T proxy) {
+  protected BaseIOPinImpl(P proxy) {
     this.proxy = proxy;
   }
 
@@ -44,7 +48,7 @@ public class BaseIOPinImpl<T extends GpioPinProxy>
     return proxy.offline();
   }
 
-  protected T proxy() {
+  protected P proxy() {
     return proxy;
   }
 }

@@ -19,6 +19,7 @@
 
 package com.ooarchitect.gpioclient;
 
-public interface OutputPin extends BaseIOPin<OutputPinProxy>  {
+public interface OutputPin
+    extends BaseIOPin {
   boolean send(Level level);
 }

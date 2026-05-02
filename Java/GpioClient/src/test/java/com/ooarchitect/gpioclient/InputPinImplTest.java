@@ -43,21 +43,21 @@ class InputPinImplTest {
   public MockitoRule initRule = MockitoJUnit.rule();
 
   @Mock
-  private InputPinProxy pinProxy;
+  private InputPinProxy<ESP32s2Pin> pinProxy;
 
   private InOrder inOrder;
 
-  private InputPinImpl pin;
+  private InputPinImpl<ESP32s2Pin> pin;
 
   @BeforeEach
   public void beforeEachTest() {
     inOrder = Mockito.inOrder(pinProxy);
-    pin = new InputPinImpl(pinProxy);
+    pin = new InputPinImpl<>(pinProxy);
   }
 
   @Test
   public void valueIsHigh() {
-    Mockito.doReturn((byte) 1).when(pinProxy).value();
+    Mockito.doReturn(Level.HIGH).when(pinProxy).value();
     Truth.assertThat(pin.value()).isEqualTo(Level.HIGH);
     inOrder.verify(pinProxy).value();
     inOrder.verifyNoMoreInteractions();
@@ -65,7 +65,7 @@ class InputPinImplTest {
 
   @Test
   public void valueIsLow() {
-    Mockito.doReturn((byte) 0).when(pinProxy).value();
+    Mockito.doReturn(Level.LOW).when(pinProxy).value();
     Truth.assertThat(pin.value()).isEqualTo(Level.LOW);
     inOrder.verify(pinProxy).value();
     inOrder.verifyNoMoreInteractions();

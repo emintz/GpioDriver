@@ -31,32 +31,46 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @ExtendWith(MockitoExtension.class)
 class ResponseDispatcherTest {
 
+  private static final byte PIN_4_LOW = 0x04;
+  private static final byte PIN_4_HIGH = (byte) 0x84;
+  private static final byte PIN_18_LOW = 18;
+  private static final byte PIN_18_HIGH =(byte) 0x80 | 18;
+
   @Rule
   public MockitoRule initRule = MockitoJUnit.rule();
 
-  static PhysicalToGpioPin<ESP32s2Pin> physicalToGpioPin;
+  static Map<Integer, ESP32s2Pin> physicalToGpioPin;
 
   ResponseDispatcher<ESP32s2Pin> handler;
 
   @Mock ByteSupplier byteSupplier;
-  @Mock PinValueConsumer pinValueConsumer;
+
+  @Mock
+  BiConsumer<ESP32s2Pin, Level> mutationConsumer;
   @Mock Consumer<IOStatusMessage<ESP32s2Pin>> statusConsumer;
 
   @BeforeAll
   public static void beforeRunningTests() {
-    physicalToGpioPin = new PhysicalToGpioPin<>(ESP32s2Pin.class);
+    physicalToGpioPin = new HashMap<>();
   }
 
   @BeforeEach
   public void setUpForTest() {
+    physicalToGpioPin = new HashMap<>();
+    for (var pin : ESP32s2Pin.values()) {
+      physicalToGpioPin.put((int) pin.number(), pin);
+    }
     handler = new ResponseDispatcher<>(
         byteSupplier,
-        pinValueConsumer,
+        mutationConsumer,
         statusConsumer,
         physicalToGpioPin);
   }
@@ -74,21 +88,21 @@ class ResponseDispatcherTest {
   public void oneMutation() {
     Truth.assertThat(handler.currentState())
         .isEqualTo(ResponseDispatcher.State.CREATED);
-    processOneByte(0x10);
-    Mockito.verify(pinValueConsumer).accept((byte) 0x10);
-    Mockito.verifyNoMoreInteractions(pinValueConsumer);
+    processOneByte(PIN_18_HIGH);
+    Mockito.verify(mutationConsumer).accept(ESP32s2Pin.GPIO_18, Level.HIGH);
+    Mockito.verifyNoMoreInteractions(mutationConsumer);
     Mockito.verifyNoInteractions(statusConsumer);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.MUTATING);
   }
 
   @Test
   void twoMutations() {
-    processOneByte(0x10);
-    processOneByte(0x11);
-    InOrder inOrder = Mockito.inOrder(pinValueConsumer, statusConsumer);
-    inOrder.verify(pinValueConsumer).accept((byte) 0x10);
-    inOrder.verify(pinValueConsumer).accept((byte) 0x11);
-    Mockito.verifyNoMoreInteractions(pinValueConsumer);
+    processOneByte(PIN_4_LOW);
+    processOneByte(PIN_18_HIGH);
+    InOrder inOrder = Mockito.inOrder(mutationConsumer, statusConsumer);
+    inOrder.verify(mutationConsumer).accept(ESP32s2Pin.GPIO_4, Level.LOW);
+    inOrder.verify(mutationConsumer).accept(ESP32s2Pin.GPIO_18, Level.HIGH);
+    Mockito.verifyNoMoreInteractions(mutationConsumer);
     Mockito.verifyNoInteractions(statusConsumer);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.MUTATING);
   }
@@ -108,7 +122,7 @@ class ResponseDispatcherTest {
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_SIDE_DATA);
     processOneByte(0x7F);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.STATUS_RECEIVED);
-    InOrder inOrder = Mockito.inOrder(pinValueConsumer, statusConsumer);
+    InOrder inOrder = Mockito.inOrder(mutationConsumer, statusConsumer);
     inOrder.verify(statusConsumer).accept(
         new IOStatusMessage<>(
             IOStatusCode.OPEN_FAILED,
@@ -133,20 +147,20 @@ class ResponseDispatcherTest {
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_SIDE_DATA);
     processOneByte(0x7F);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.STATUS_RECEIVED);
-    processOneByte(42);
+    processOneByte(PIN_18_LOW);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.MUTATING);
-    InOrder inOrder = Mockito.inOrder(pinValueConsumer, statusConsumer);
+    InOrder inOrder = Mockito.inOrder(mutationConsumer, statusConsumer);
     inOrder.verify(statusConsumer).accept(
         new IOStatusMessage<>(
             IOStatusCode.OPEN_FAILED, StatusScope.OUTPUT, ESP32s2Pin.GPIO_18,
             (byte) 137));
-    inOrder.verify(pinValueConsumer).accept((byte) 42);
+    inOrder.verify(mutationConsumer).accept(ESP32s2Pin.GPIO_18, Level.LOW);
     inOrder.verifyNoMoreInteractions();
   }
 
   @Test
   public void oneMutationOneStatus() {
-    processOneByte(42);
+    processOneByte(PIN_18_LOW);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.MUTATING);
     processOneByte(0xFF);
     Truth.assertThat(handler.currentState())
@@ -161,8 +175,8 @@ class ResponseDispatcherTest {
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_SIDE_DATA);
     processOneByte(0x7F);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.STATUS_RECEIVED);
-    InOrder inOrder = Mockito.inOrder(pinValueConsumer, statusConsumer);
-    inOrder.verify(pinValueConsumer).accept((byte) 42);
+    InOrder inOrder = Mockito.inOrder(mutationConsumer, statusConsumer);
+    inOrder.verify(mutationConsumer).accept(ESP32s2Pin.GPIO_18, Level.LOW);
     inOrder.verify(statusConsumer).accept(
         new IOStatusMessage<>(
             IOStatusCode.OPEN_FAILED, StatusScope.OUTPUT, ESP32s2Pin.GPIO_18,
@@ -172,22 +186,22 @@ class ResponseDispatcherTest {
 
   @Test
   public void spuriousDoubleEndBetweenMutations() {
-    processOneByte(42);
+    processOneByte(PIN_18_HIGH);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.MUTATING);
     processOneByte(0x7F);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.RECOVERING);
     processOneByte(0x7F);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.IDLE);
-    processOneByte(137);
-    InOrder inOrder = Mockito.inOrder(pinValueConsumer, statusConsumer);
-    inOrder.verify(pinValueConsumer).accept((byte) 42);
-    inOrder.verify(pinValueConsumer).accept((byte) 137);
+    processOneByte(PIN_4_HIGH);
+    InOrder inOrder = Mockito.inOrder(mutationConsumer, statusConsumer);
+    inOrder.verify(mutationConsumer).accept(ESP32s2Pin.GPIO_18, Level.HIGH);
+    inOrder.verify(mutationConsumer).accept(ESP32s2Pin.GPIO_4, Level.HIGH);
     inOrder.verifyNoMoreInteractions();
   }
 
   @Test
   public void emptyStatusBetweenMutations() {
-    processOneByte(42);
+    processOneByte(PIN_18_HIGH);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.MUTATING);
     processOneByte(0xFF);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.RECEIVING_STATUS_MESSAGE);
@@ -195,17 +209,17 @@ class ResponseDispatcherTest {
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.RECOVERING);
     processOneByte(0x7F);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.IDLE);
-    processOneByte(137);
-    InOrder inOrder = Mockito.inOrder(pinValueConsumer, statusConsumer);
-    inOrder.verify(pinValueConsumer).accept((byte) 42);
-    inOrder.verify(pinValueConsumer).accept((byte) 137);
+    processOneByte(PIN_4_LOW);
+    InOrder inOrder = Mockito.inOrder(mutationConsumer, statusConsumer);
+    inOrder.verify(mutationConsumer).accept(ESP32s2Pin.GPIO_18, Level.HIGH);
+    inOrder.verify(mutationConsumer).accept(ESP32s2Pin.GPIO_4, Level.LOW);
     inOrder.verifyNoMoreInteractions();
   }
 
   @Test
   public void oneResetAfterMutation() {
     // An ordinary mutation
-    processOneByte(42);
+    processOneByte(PIN_18_HIGH);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.MUTATING);
     // Bogus end of status
     processOneByte(0x7F);
@@ -225,17 +239,17 @@ class ResponseDispatcherTest {
     // End of message
     processOneByte(0x7F);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.IDLE);
-    processOneByte(2);
-    InOrder inOrder = Mockito.inOrder(pinValueConsumer, statusConsumer);
-    inOrder.verify(pinValueConsumer).accept((byte) 42);
-    inOrder.verify(pinValueConsumer).accept((byte) 2);
+    processOneByte(PIN_4_HIGH);
+    InOrder inOrder = Mockito.inOrder(mutationConsumer, statusConsumer);
+    inOrder.verify(mutationConsumer).accept(ESP32s2Pin.GPIO_18, Level.HIGH);
+    inOrder.verify(mutationConsumer).accept(ESP32s2Pin.GPIO_4, Level.HIGH);
     inOrder.verifyNoMoreInteractions();
   }
 
   @Test
   public void twoResetsAfterMutation() {
     // An ordinary mutation
-    processOneByte(42);
+    processOneByte(PIN_18_HIGH);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.MUTATING);
     // Bogus end of status
     processOneByte(0x7F);
@@ -279,14 +293,14 @@ class ResponseDispatcherTest {
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.STATUS_RECEIVED);
 
     // Close with a mutation
-    processOneByte(2);
-    InOrder inOrder = Mockito.inOrder(pinValueConsumer, statusConsumer);
+    processOneByte(PIN_4_HIGH);
+    InOrder inOrder = Mockito.inOrder(mutationConsumer, statusConsumer);
 
-    inOrder.verify(pinValueConsumer).accept((byte) 42);
+    inOrder.verify(mutationConsumer).accept(ESP32s2Pin.GPIO_18, Level.HIGH);
     inOrder.verify(statusConsumer).accept(new IOStatusMessage<>(
         IOStatusCode.RESET_SUCCEEDED, StatusScope.OUTPUT, ESP32s2Pin.GPIO_18,
         (byte) 7));
-    inOrder.verify(pinValueConsumer).accept((byte) 2);
+    inOrder.verify(mutationConsumer).accept(ESP32s2Pin.GPIO_4, Level.HIGH);
     inOrder.verifyNoMoreInteractions();
   }
 
@@ -314,7 +328,7 @@ class ResponseDispatcherTest {
     // Message ends
     processOneByte(0x7F);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.IDLE);
-    InOrder inOrder = Mockito.inOrder(pinValueConsumer, statusConsumer);
+    InOrder inOrder = Mockito.inOrder(mutationConsumer, statusConsumer);
     inOrder.verifyNoMoreInteractions();
   }
 
@@ -327,7 +341,7 @@ class ResponseDispatcherTest {
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_NUMBER);
     processOneByte(0x7F);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.RECOVERING);
-    InOrder inOrder = Mockito.inOrder(pinValueConsumer, statusConsumer);
+    InOrder inOrder = Mockito.inOrder(mutationConsumer, statusConsumer);
     inOrder.verifyNoMoreInteractions();
   }
 
@@ -346,7 +360,7 @@ class ResponseDispatcherTest {
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_SIDE_DATA);
     processOneByte(0x7F);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.STATUS_RECEIVED);
-    InOrder inOrder = Mockito.inOrder(pinValueConsumer, statusConsumer);
+    InOrder inOrder = Mockito.inOrder(mutationConsumer, statusConsumer);
     inOrder.verify(statusConsumer).accept(
         new IOStatusMessage<>(
             IOStatusCode.OPEN_FAILED, StatusScope.OUTPUT, ESP32s2Pin.GPIO_18,
@@ -369,7 +383,7 @@ class ResponseDispatcherTest {
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_SIDE_DATA);
     processOneByte(0x7F);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.STATUS_RECEIVED);
-    InOrder inOrder = Mockito.inOrder(pinValueConsumer, statusConsumer);
+    InOrder inOrder = Mockito.inOrder(mutationConsumer, statusConsumer);
     inOrder.verify(statusConsumer).accept(
         new IOStatusMessage<>(
             IOStatusCode.OPEN_FAILED,

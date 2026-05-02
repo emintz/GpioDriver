@@ -18,33 +18,32 @@
  */
 package com.ooarchitect.gpioclient;
 
-import com.google.common.annotations.VisibleForTesting;
-
 import java.util.function.Consumer;
 
 /**
  * Refactored input pin based on GpioPin.
  */
-final class InputPinProxy extends GpioPinProxy {
+final class InputPinProxy<T extends Enum<T> & GpioPinNumber>
+    extends GpioPinProxy<T> {
 
   private static final byte LOW = 0;
 
-  private byte value;
-  private PinLevelConsumer levelConsumer;
+  private Level value;
+  private Consumer<Level> levelConsumer;
   private OutputPinConfiguration pendingConfiguration;
 
   private record OutputPinConfiguration(
       PullMode resistorConfiguration,
-      PinLevelConsumer levelConsumer,
+      Consumer<Level> levelConsumer,
       Consumer<IOStatusCode> statusCallback) {
   }
 
 
   InputPinProxy(
-    byte pinNumber,
-    OutputChannel outputChannel) {
+    T pinNumber,
+    Transmitter<T> outputChannel) {
     super(pinNumber, outputChannel, StatusScope.INPUT);
-    value = LOW;
+    value = Level.LOW;
     levelConsumer = null;
   }
 
@@ -57,18 +56,18 @@ final class InputPinProxy extends GpioPinProxy {
    */
   @Override
   protected boolean goOffline() {
-    value = LOW;
+    value = Level.LOW;
     return false;
   }
 
   @Override
   protected void onReset() {
-    value = LOW;
+    value = Level.LOW;
   }
 
   boolean doOpen(
       PullMode resistorConfiguration,
-      PinLevelConsumer levelConsumer,
+      Consumer<Level> levelConsumer,
       Consumer<IOStatusCode> statusCallback) {
     boolean result = false;
     try {
@@ -99,35 +98,34 @@ final class InputPinProxy extends GpioPinProxy {
    */
   @Override
   protected boolean onOpenSucceeded(byte sideData) {
-    value = sideData;
+    value = sideData == 0 ? Level.LOW : Level.HIGH;
     return true;
   }
 
   InputPin open(
       PullMode resistorConfiguration,
-      PinLevelConsumer levelConsumer,
+      Consumer<Level> levelConsumer,
       Consumer<IOStatusCode> statusCallback) {
     return doOpen(resistorConfiguration, levelConsumer, statusCallback)
-        ? new InputPinImpl(this)
+        ? new InputPinImpl<>(this)
         : null;
   }
 
   /**
    * Receive a GPIO mutation (i.e. a changed voltage level), record its
-   * value, and pass it to the bound {@link PinLevelConsumer}. Note that
+   * value, and pass it to the bound {@link Consumer}. Note that
    * the level consumer is <em>NOT</em> single threaded.
    *
    * @param mutation the new GPIO voltage level, LOW (0) or HIGH (1). The
    *                 level is ignored when the pin is inactive.
    */
-  void receiveMutation(byte mutation) {
+  void receiveMutation(Level mutation) {
     // Note that active() is atomic so locking is not needed.
     // In fact locking would be undesirable since the pin must
     // be unlocked when it invokes the consumer.
     if (active()) {
       value = mutation;
-      levelConsumer.consume(
-          value == 0 ? Level.LOW : Level.HIGH);
+      levelConsumer.accept(value);
     }
   }
 
@@ -144,7 +142,7 @@ final class InputPinProxy extends GpioPinProxy {
     return result;
   }
 
-  byte value() {
+  Level value() {
     try {
       lock();
       return value;
@@ -154,8 +152,7 @@ final class InputPinProxy extends GpioPinProxy {
   }
 
   // Test support
-  @VisibleForTesting
-  void setValue(byte value) {
+  void setValue(Level value) {
     this.value = value;
   }
 }

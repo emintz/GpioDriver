@@ -40,16 +40,16 @@ class OutputPinImplTest {
   public MockitoRule initRule = MockitoJUnit.rule();
 
   @Mock
-  private OutputPinProxy pinProxy;
+  private OutputPinProxy<ESP32s2Pin> pinProxy;
 
   private InOrder inOrder;
 
-  private OutputPinImpl pin;
+  private OutputPinImpl<ESP32s2Pin> pin;
 
   @BeforeEach
   public void beforeEachTest() {
     inOrder = Mockito.inOrder(pinProxy);
-    pin = new OutputPinImpl(pinProxy);
+    pin = new OutputPinImpl<>(pinProxy);
   }
 
   @Test

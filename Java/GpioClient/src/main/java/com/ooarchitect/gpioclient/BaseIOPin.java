@@ -21,15 +21,26 @@ package com.ooarchitect.gpioclient;
 
 /**
  * Base user-level GPIO Input/Output API. The implementation forwards invocations
- * to a GPIO Pin proxy that interacts with the server.
- *
- * @param <T> low level GPIO pin proxy class.
+ * to a GPIO Pin proxy that interacts with the server. Both input and output
+ * pins implement the API.
  */
-public interface BaseIOPin<T extends GpioPinProxy> extends AutoCloseable {
+public interface BaseIOPin extends AutoCloseable {
 
+  /**
+   * @return {@code true} if and only the pin is open for business, that is can
+   * produce or consume (as appropriate) data and respond to configuration
+   * requests.
+   */
   boolean active();
 
+  /**
+   * Close the pin if it is open. Do nothing if the pin is closed or off-line.
+   */
   void close();
 
+  /**
+   * @return {@code true} if and only if the pin is off-line, i.e. frozen
+   *         in an invalid state a.k.a. "wedged".
+   */
   boolean offline();
 }

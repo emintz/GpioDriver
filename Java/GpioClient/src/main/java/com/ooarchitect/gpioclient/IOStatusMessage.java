@@ -29,7 +29,7 @@ package com.ooarchitect.gpioclient;
  * @param gpioPin        logical GPIO pin
  * @param side_data      command-specific data
  */
-public record IOStatusMessage<T extends Enum<? extends GpioPinNumber>>(
+public record IOStatusMessage<T extends Enum<T> & GpioPinNumber> (
     IOStatusCode status,
     StatusScope scope,
     T gpioPin,

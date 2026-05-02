@@ -23,15 +23,16 @@ import java.util.function.Consumer;
 /**
  * Proxy for a server GPIO that is openXXX for output.
  */
-public class OutputPinProxy extends GpioPinProxy {
+public class OutputPinProxy<T extends Enum<T> & GpioPinNumber>
+    extends GpioPinProxy<T> {
 
   private static final byte LOW = 0;
 
   private Consumer<IOStatusCode> pendingStatusCodeCallback;
 
   OutputPinProxy(
-      byte pinNumber,
-      OutputChannel outputChannel) {
+      T pinNumber,
+      Transmitter<T> outputChannel) {
     super(
         pinNumber,
         outputChannel,
@@ -66,7 +67,7 @@ public class OutputPinProxy extends GpioPinProxy {
 
   OutputPin open(Consumer<IOStatusCode> statusCallback) {
     return doOpen(statusCallback)
-        ? new OutputPinImpl(this)
+        ? new OutputPinImpl<>(this)
         : null;
   }
 
@@ -81,7 +82,7 @@ public class OutputPinProxy extends GpioPinProxy {
   boolean send(Level value) {
     boolean result = active();
     if (result) {
-      result = sendMutation((byte) (pinNumber() | value.value()));
+      result = sendMutation((byte) (rawPinNumber() | value.value()));
     }
     return result;
   }

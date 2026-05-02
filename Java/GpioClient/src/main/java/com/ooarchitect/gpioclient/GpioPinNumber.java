@@ -20,13 +20,13 @@
 package com.ooarchitect.gpioclient;
 
 /**
- * GPIO pin number API. This is the base class for enumerating pins on
- * any ESP32 model.
+ * GPIO number API. This is the base class for enumerating pins on
+ * any ESP32 model. Pin enumerations must supply the number of their
+ * physical counterparts.
  */
 public interface GpioPinNumber {
     /**
-     *
-     * @return the physical GPIO pin number
+     * @return the physical GPIO number
      */
     byte number();
 }

@@ -28,7 +28,7 @@ import java.util.ArrayList;
 /**
  * Validates {@link PhysicalToGpioPin}
  */
-class PhysicalToGpioPinProxyTest {
+class PhysicalToGpioPinTest {
 
   private static ArrayList<Integer> EXPECTED_KEYS;
 

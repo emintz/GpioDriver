@@ -49,28 +49,17 @@ class InputPinProxyTest {
   @Mock
   private Consumer<IOStatusCode> openRequestedCallback;
   @Mock
-  private OutputChannel outputChannel;
+  private Transmitter<ESP32s2Pin> outputChannel;
   @Mock
-  private PinLevelConsumer levelConsumer;
+  private Consumer<Level> levelConsumer;
 
-  private InputPinProxy inputPin;
+  private InputPinProxy<ESP32s2Pin> inputPin;
   private InOrder inOrder;
-
-  private static byte[] expectedSend(
-      ConfigurationCommandCode commandCode,
-      PullMode resistorConfiguration) {
-    return new byte[] {
-        (byte) commandCode.ordinal(),
-        (byte) StatusScope.INPUT.ordinal(),
-        ESP32s2Pin.GPIO_18.number(),
-        (byte) resistorConfiguration.ordinal(),
-    };
-  }
 
   @BeforeEach
   public void beforeEachTest() {
-    inputPin = new InputPinProxy(
-        ESP32s2Pin.GPIO_18.number(),
+    inputPin = new InputPinProxy<>(
+        ESP32s2Pin.GPIO_18,
         outputChannel);
     inputPin.setStatusCallback(callback);
     inOrder = Mockito.inOrder(
@@ -88,18 +77,19 @@ class InputPinProxyTest {
 
   @Test
   public void successfulDoOpenReceiveCloseCycle() {
-    byte[] expectedOpenCommand = expectedSend(
-        ConfigurationCommandCode.OPEN,
-        PullMode.UP);
-
-    byte[] expectedCloseCommand = expectedSend(
-        ConfigurationCommandCode.CLOSE,
-        PullMode.FLOAT);
 
     Mockito.doReturn(true)
-        .when(outputChannel).send(expectedCloseCommand);
+            .when(outputChannel).sendCommand(
+                ConfigurationCommandCode.CLOSE,
+                StatusScope.INPUT,
+                ESP32s2Pin.GPIO_18,
+                PullMode.FLOAT);
     Mockito.doReturn(true)
-        .when(outputChannel).send(expectedOpenCommand);
+        .when(outputChannel).sendCommand(
+            ConfigurationCommandCode.OPEN,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            PullMode.UP);
 
     Truth.assertThat(inputPin.doOpen(
         PullMode.UP,
@@ -116,14 +106,14 @@ class InputPinProxyTest {
     Truth.assertThat(inputPin.available()).isFalse();
     Truth.assertThat(inputPin.active()).isTrue();
     Truth.assertThat(inputPin.offline()).isFalse();
-    Truth.assertThat(inputPin.value()).isEqualTo(HIGH);
+    Truth.assertThat(inputPin.value()).isEqualTo(Level.HIGH);
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.ACTIVE);
 
-    inputPin.receiveMutation(LOW);
+    inputPin.receiveMutation(Level.LOW);
     Truth.assertThat(inputPin.available()).isFalse();
     Truth.assertThat(inputPin.active()).isTrue();
     Truth.assertThat(inputPin.offline()).isFalse();
-    Truth.assertThat(inputPin.value()).isEqualTo(LOW);
+    Truth.assertThat(inputPin.value()).isEqualTo(Level.LOW);
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.ACTIVE);
 
     Truth.assertThat(inputPin.close()).isTrue();
@@ -139,10 +129,18 @@ class InputPinProxyTest {
     Truth.assertThat(inputPin.active()).isFalse();
     Truth.assertThat(inputPin.offline()).isFalse();
 
-    inOrder.verify(outputChannel).send(expectedOpenCommand);
+    inOrder.verify(outputChannel).sendCommand(
+        ConfigurationCommandCode.OPEN,
+        StatusScope.INPUT,
+        ESP32s2Pin.GPIO_18,
+        PullMode.UP);
     inOrder.verify(openRequestedCallback).accept(IOStatusCode.OPEN_SUCCEEDED);
-    inOrder.verify(levelConsumer).consume(Level.LOW);
-    inOrder.verify(outputChannel).send(expectedCloseCommand);
+    inOrder.verify(levelConsumer).accept(Level.LOW);
+    inOrder.verify(outputChannel).sendCommand(
+        ConfigurationCommandCode.CLOSE,
+        StatusScope.INPUT,
+        ESP32s2Pin.GPIO_18,
+        PullMode.FLOAT);
     inOrder.verify(openRequestedCallback).accept(IOStatusCode.CLOSE_SUCCEEDED);
     inOrder.verifyNoMoreInteractions();
   }
@@ -150,13 +148,13 @@ class InputPinProxyTest {
 
   @Test
   public void redundantDoOpen() {
-    byte[] expectedOpenCommand = expectedSend(
-        ConfigurationCommandCode.OPEN,
-        PullMode.DOWN);
 
     Mockito.doReturn(true)
-        .when(outputChannel).send(expectedOpenCommand);
-
+        .when(outputChannel).sendCommand(
+            ConfigurationCommandCode.OPEN,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            PullMode.DOWN);
     Truth.assertThat(inputPin.doOpen(
         PullMode.DOWN,
         levelConsumer,
@@ -172,14 +170,14 @@ class InputPinProxyTest {
     Truth.assertThat(inputPin.available()).isFalse();
     Truth.assertThat(inputPin.active()).isTrue();
     Truth.assertThat(inputPin.offline()).isFalse();
-    Truth.assertThat(inputPin.value()).isEqualTo(LOW);
+    Truth.assertThat(inputPin.value()).isEqualTo(Level.LOW);
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.ACTIVE);
 
-    inputPin.receiveMutation(LOW);
+    inputPin.receiveMutation(Level.LOW);
     Truth.assertThat(inputPin.available()).isFalse();
     Truth.assertThat(inputPin.active()).isTrue();
     Truth.assertThat(inputPin.offline()).isFalse();
-    Truth.assertThat(inputPin.value()).isEqualTo(LOW);
+    Truth.assertThat(inputPin.value()).isEqualTo(Level.LOW);
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.ACTIVE);
 
     Truth.assertThat(inputPin.doOpen(
@@ -189,30 +187,35 @@ class InputPinProxyTest {
     Truth.assertThat(inputPin.available()).isFalse();
     Truth.assertThat(inputPin.active()).isTrue();
     Truth.assertThat(inputPin.offline()).isFalse();
-    Truth.assertThat(inputPin.value()).isEqualTo(LOW);
+    Truth.assertThat(inputPin.value()).isEqualTo(Level.LOW);
 
-    inputPin.receiveMutation(HIGH);
+    inputPin.receiveMutation(Level.HIGH);
     Truth.assertThat(inputPin.available()).isFalse();
     Truth.assertThat(inputPin.active()).isTrue();
     Truth.assertThat(inputPin.offline()).isFalse();
-    Truth.assertThat(inputPin.value()).isEqualTo(HIGH);
+    Truth.assertThat(inputPin.value()).isEqualTo(Level.HIGH);
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.ACTIVE);
 
-    inOrder.verify(outputChannel).send(expectedOpenCommand);
+    inOrder.verify(outputChannel).sendCommand(
+        ConfigurationCommandCode.OPEN,
+        StatusScope.INPUT,
+        ESP32s2Pin.GPIO_18,
+        PullMode.DOWN);
     inOrder.verify(openRequestedCallback).accept(IOStatusCode.OPEN_SUCCEEDED);
-    inOrder.verify(levelConsumer).consume(Level.LOW);
-    inOrder.verify(levelConsumer).consume(Level.HIGH);
+    inOrder.verify(levelConsumer).accept(Level.LOW);
+    inOrder.verify(levelConsumer).accept(Level.HIGH);
     inOrder.verifyNoMoreInteractions();
   }
 
   @Test
   public void successfulOpen() {
-    byte[] expectedOpenCommand = expectedSend(
-        ConfigurationCommandCode.OPEN,
-        PullMode.UP);
 
     Mockito.doReturn(true)
-        .when(outputChannel).send(expectedOpenCommand);
+        .when(outputChannel).sendCommand(
+            ConfigurationCommandCode.OPEN,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            PullMode.UP);
 
     var pinForTheUser = inputPin.open(
         PullMode.UP,
@@ -234,39 +237,45 @@ class InputPinProxyTest {
 
   @Test
   public void resetSuccessfullyFromAvailable() {
-    byte[] expectedResetCommand = expectedSend(
-        ConfigurationCommandCode.RESET,
-        PullMode.FLOAT);
     Mockito.doReturn(true)
-        .when(outputChannel).send(expectedResetCommand);
+        .when(outputChannel).sendCommand(
+            ConfigurationCommandCode.RESET,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            PullMode.FLOAT);
 
-    inputPin.setValue(HIGH);
+    inputPin.setValue(Level.HIGH);
 
     Truth.assertThat(inputPin.reset()).isTrue();
     Truth.assertThat(inputPin.available()).isFalse();
     Truth.assertThat(inputPin.active()).isFalse();
     Truth.assertThat(inputPin.offline()).isFalse();
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.RESET_PENDING);
-    Truth.assertThat(inputPin.value()).isEqualTo(LOW);
+    Truth.assertThat(inputPin.value()).isEqualTo(Level.LOW);
 
     Truth.assertThat(inputPin.receivePinConfigurationStatus(
         IOStatusCode.RESET_SUCCEEDED,
         LOW)).isTrue();
 
-    inOrder.verify(outputChannel).send(expectedResetCommand);
+    inOrder.verify(outputChannel).sendCommand(
+        ConfigurationCommandCode.RESET,
+        StatusScope.INPUT,
+        ESP32s2Pin.GPIO_18,
+        PullMode.FLOAT);
     inOrder.verify(callback).accept(IOStatusCode.RESET_SUCCEEDED);
     inOrder.verifyNoMoreInteractions();
   }
 
   @Test
   public void resetSuccessfullyFromOpenPending() {
-    byte[] expectedResetCommand = expectedSend(
-        ConfigurationCommandCode.RESET,
-        PullMode.FLOAT);
     Mockito.doReturn(true)
-        .when(outputChannel).send(expectedResetCommand);
+        .when(outputChannel).sendCommand(
+            ConfigurationCommandCode.RESET,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            PullMode.FLOAT);
 
-    inputPin.setValue(HIGH);
+    inputPin.setValue(Level.HIGH);
     inputPin.setState(PinState.OPEN_PENDING);
 
     Truth.assertThat(inputPin.reset()).isTrue();
@@ -274,26 +283,32 @@ class InputPinProxyTest {
     Truth.assertThat(inputPin.active()).isFalse();
     Truth.assertThat(inputPin.offline()).isFalse();
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.RESET_PENDING);
-    Truth.assertThat(inputPin.value()).isEqualTo(LOW);
+    Truth.assertThat(inputPin.value()).isEqualTo(Level.LOW);
 
     Truth.assertThat(inputPin.receivePinConfigurationStatus(
         IOStatusCode.RESET_SUCCEEDED,
         LOW)).isTrue();
 
-    inOrder.verify(outputChannel).send(expectedResetCommand);
+    inOrder.verify(outputChannel).sendCommand(
+            ConfigurationCommandCode.RESET,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            PullMode.FLOAT);
+
     inOrder.verify(callback).accept(IOStatusCode.RESET_SUCCEEDED);
     inOrder.verifyNoMoreInteractions();
   }
 
   @Test
   public void resetSuccessfullyFromActive() {
-    byte[] expectedResetCommand = expectedSend(
-        ConfigurationCommandCode.RESET,
-        PullMode.FLOAT);
     Mockito.doReturn(true)
-        .when(outputChannel).send(expectedResetCommand);
+        .when(outputChannel).sendCommand(
+            ConfigurationCommandCode.RESET,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            PullMode.FLOAT);
 
-    inputPin.setValue(HIGH);
+    inputPin.setValue(Level.HIGH);
     inputPin.setState(PinState.ACTIVE);
 
     Truth.assertThat(inputPin.reset()).isTrue();
@@ -301,26 +316,31 @@ class InputPinProxyTest {
     Truth.assertThat(inputPin.active()).isFalse();
     Truth.assertThat(inputPin.offline()).isFalse();
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.RESET_PENDING);
-    Truth.assertThat(inputPin.value()).isEqualTo(LOW);
+    Truth.assertThat(inputPin.value()).isEqualTo(Level.LOW);
 
     Truth.assertThat(inputPin.receivePinConfigurationStatus(
         IOStatusCode.RESET_SUCCEEDED,
         LOW)).isTrue();
 
-    inOrder.verify(outputChannel).send(expectedResetCommand);
+    inOrder.verify(outputChannel).sendCommand(
+        ConfigurationCommandCode.RESET,
+        StatusScope.INPUT,
+        ESP32s2Pin.GPIO_18,
+        PullMode.FLOAT);
     inOrder.verify(callback).accept(IOStatusCode.RESET_SUCCEEDED);
     inOrder.verifyNoMoreInteractions();
   }
 
   @Test
   public void resetSuccessfullyFromClosePending() {
-    byte[] expectedResetCommand = expectedSend(
-        ConfigurationCommandCode.RESET,
-        PullMode.FLOAT);
     Mockito.doReturn(true)
-        .when(outputChannel).send(expectedResetCommand);
+        .when(outputChannel).sendCommand(
+            ConfigurationCommandCode.RESET,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            PullMode.FLOAT);
 
-    inputPin.setValue(HIGH);
+    inputPin.setValue(Level.HIGH);
     inputPin.setState(PinState.CLOSE_PENDING);
 
     Truth.assertThat(inputPin.reset()).isTrue();
@@ -328,26 +348,31 @@ class InputPinProxyTest {
     Truth.assertThat(inputPin.active()).isFalse();
     Truth.assertThat(inputPin.offline()).isFalse();
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.RESET_PENDING);
-    Truth.assertThat(inputPin.value()).isEqualTo(LOW);
+    Truth.assertThat(inputPin.value()).isEqualTo(Level.LOW);
 
     Truth.assertThat(inputPin.receivePinConfigurationStatus(
         IOStatusCode.RESET_SUCCEEDED,
         LOW)).isTrue();
 
-    inOrder.verify(outputChannel).send(expectedResetCommand);
+    inOrder.verify(outputChannel).sendCommand(
+        ConfigurationCommandCode.RESET,
+        StatusScope.INPUT,
+        ESP32s2Pin.GPIO_18,
+        PullMode.FLOAT);
     inOrder.verify(callback).accept(IOStatusCode.RESET_SUCCEEDED);
     inOrder.verifyNoMoreInteractions();
   }
 
   @Test
   public void resetSuccessfullyFromOffline() {
-    byte[] expectedResetCommand = expectedSend(
-        ConfigurationCommandCode.RESET,
-        PullMode.FLOAT);
     Mockito.doReturn(true)
-        .when(outputChannel).send(expectedResetCommand);
+        .when(outputChannel).sendCommand(
+            ConfigurationCommandCode.RESET,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            PullMode.FLOAT);
 
-    inputPin.setValue(HIGH);
+    inputPin.setValue(Level.HIGH);
     inputPin.setState(PinState.OFFLINE);
 
     Truth.assertThat(inputPin.reset()).isTrue();
@@ -355,13 +380,17 @@ class InputPinProxyTest {
     Truth.assertThat(inputPin.active()).isFalse();
     Truth.assertThat(inputPin.offline()).isFalse();
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.RESET_PENDING);
-    Truth.assertThat(inputPin.value()).isEqualTo(LOW);
+    Truth.assertThat(inputPin.value()).isEqualTo(Level.LOW);
 
     Truth.assertThat(inputPin.receivePinConfigurationStatus(
         IOStatusCode.RESET_SUCCEEDED,
         LOW)).isTrue();
 
-    inOrder.verify(outputChannel).send(expectedResetCommand);
+    inOrder.verify(outputChannel).sendCommand(
+        ConfigurationCommandCode.RESET,
+        StatusScope.INPUT,
+        ESP32s2Pin.GPIO_18,
+        PullMode.FLOAT);
     inOrder.verify(callback).accept(IOStatusCode.RESET_SUCCEEDED);
     inOrder.verifyNoMoreInteractions();
 
@@ -371,7 +400,7 @@ class InputPinProxyTest {
   public void resetSuccessfullyFromAResetPending() {
     // We presume that a prior reset call set the pin value
     // LOW.
-    inputPin.setValue(LOW);
+    inputPin.setValue(Level.LOW);
     inputPin.setState(PinState.RESET_PENDING);
 
     Truth.assertThat(inputPin.reset()).isTrue();
@@ -379,7 +408,7 @@ class InputPinProxyTest {
     Truth.assertThat(inputPin.active()).isFalse();
     Truth.assertThat(inputPin.offline()).isFalse();
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.RESET_PENDING);
-    Truth.assertThat(inputPin.value()).isEqualTo(LOW);
+    Truth.assertThat(inputPin.value()).isEqualTo(Level.LOW);
 
     Truth.assertThat(inputPin.receivePinConfigurationStatus(
         IOStatusCode.RESET_SUCCEEDED,
@@ -389,6 +418,5 @@ class InputPinProxyTest {
     // when the pin is waiting for reset status.
     inOrder.verify(callback).accept(IOStatusCode.RESET_SUCCEEDED);
     inOrder.verifyNoMoreInteractions();
-
   }
 }
