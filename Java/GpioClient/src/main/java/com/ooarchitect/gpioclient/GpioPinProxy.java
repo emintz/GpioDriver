@@ -37,7 +37,7 @@ public abstract class GpioPinProxy<T extends Enum<T> & GpioPinNumber> {
   private final Transmitter<T> outputChannel;
   private final StatusScope scope;
   private final ReentrantLock lock;
-  private Consumer<IOStatusCode> statusCallback;
+  private Consumer<IOStatusMessage<T>>statusCallback;
   private PinState state;
 
   /**
@@ -116,7 +116,7 @@ public abstract class GpioPinProxy<T extends Enum<T> & GpioPinNumber> {
         status = transition(IOEvent.CLOSE_REQUESTED, LOW);
         if (!status) {
           transition(IOEvent.CLOSE_FAILED, LOW);
-          statusCallback.accept(IOStatusCode.CLOSE_FAILED);
+          reportStatus(IOStatusCode.CLOSE_FAILED, (byte) 0);
         }
       }
       return status;
@@ -200,7 +200,7 @@ public abstract class GpioPinProxy<T extends Enum<T> & GpioPinNumber> {
   boolean receivePinConfigurationStatus(
       IOStatusCode code,
       byte sideData) {
-    Consumer<IOStatusCode> activeStatusCallback = statusCallback;
+    Consumer<IOStatusMessage<T>>activeStatusCallback = statusCallback;
     boolean result;
     try {
       lock.lock();
@@ -214,8 +214,19 @@ public abstract class GpioPinProxy<T extends Enum<T> & GpioPinNumber> {
     } finally {
       lock.unlock();
     }
-    activeStatusCallback.accept(code);
+    activeStatusCallback.accept(toStatusMessage(code, sideData));
     return result;
+  }
+
+  /**
+   * Invoke the status callback passing the provided status code and side data,
+   * taking the scope and GPIO pin from this instance.
+   *
+   * @param code status code to report
+   * @param sideData status-specific side data
+   */
+  private void reportStatus(IOStatusCode code, byte sideData) {
+    statusCallback.accept(toStatusMessage(code, sideData));
   }
 
   /**
@@ -313,8 +324,18 @@ public abstract class GpioPinProxy<T extends Enum<T> & GpioPinNumber> {
    * @param statusCallback receives status notifications
    */
   @VisibleForTesting
-  void setStatusCallback(Consumer<IOStatusCode> statusCallback) {
+  void setStatusCallback(Consumer<IOStatusMessage<T>>statusCallback) {
     this.statusCallback = statusCallback;
+  }
+
+  private IOStatusMessage<T> toStatusMessage(
+      IOStatusCode code, byte sideData
+  ) {
+    return new IOStatusMessage<>(
+        code,
+        scope,
+        pinNumber,
+        sideData);
   }
 
   /**
@@ -335,7 +356,7 @@ public abstract class GpioPinProxy<T extends Enum<T> & GpioPinNumber> {
     try {
       lock.lock();
       switch(state = PinTransitionTable.PIN_TRANSITION_TABLE.onReceipt(state, event)) {
-        case INACTIVE -> statusCallback = (_) -> {};
+        case INACTIVE -> clearStatusCallback();
         case OPEN_PENDING -> result = sendOpenRequest();
         case ACTIVE -> result = onOpenSucceeded(sideData);
         case CLOSE_PENDING -> result = closeRequested();

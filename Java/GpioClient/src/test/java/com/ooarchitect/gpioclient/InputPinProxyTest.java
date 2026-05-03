@@ -45,9 +45,9 @@ class InputPinProxyTest {
   public MockitoRule initRule = MockitoJUnit.rule();
 
   @Mock
-  private Consumer<IOStatusCode> callback;
+  private Consumer<IOStatusMessage<ESP32s2Pin>> callback;
   @Mock
-  private Consumer<IOStatusCode> openRequestedCallback;
+  private Consumer<IOStatusMessage<ESP32s2Pin>> openRequestedCallback;
   @Mock
   private Transmitter<ESP32s2Pin> outputChannel;
   @Mock
@@ -77,7 +77,6 @@ class InputPinProxyTest {
 
   @Test
   public void successfulDoOpenReceiveCloseCycle() {
-
     Mockito.doReturn(true)
             .when(outputChannel).sendCommand(
                 ConfigurationCommandCode.CLOSE,
@@ -134,21 +133,29 @@ class InputPinProxyTest {
         StatusScope.INPUT,
         ESP32s2Pin.GPIO_18,
         PullMode.UP);
-    inOrder.verify(openRequestedCallback).accept(IOStatusCode.OPEN_SUCCEEDED);
+    inOrder.verify(openRequestedCallback).accept(
+        new IOStatusMessage<>(
+            IOStatusCode.OPEN_SUCCEEDED,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            HIGH));
     inOrder.verify(levelConsumer).accept(Level.LOW);
     inOrder.verify(outputChannel).sendCommand(
         ConfigurationCommandCode.CLOSE,
         StatusScope.INPUT,
         ESP32s2Pin.GPIO_18,
         PullMode.FLOAT);
-    inOrder.verify(openRequestedCallback).accept(IOStatusCode.CLOSE_SUCCEEDED);
+    inOrder.verify(openRequestedCallback).accept(
+        new IOStatusMessage<>(
+        IOStatusCode.CLOSE_SUCCEEDED,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            LOW));
     inOrder.verifyNoMoreInteractions();
   }
 
-
   @Test
   public void redundantDoOpen() {
-
     Mockito.doReturn(true)
         .when(outputChannel).sendCommand(
             ConfigurationCommandCode.OPEN,
@@ -201,7 +208,12 @@ class InputPinProxyTest {
         StatusScope.INPUT,
         ESP32s2Pin.GPIO_18,
         PullMode.DOWN);
-    inOrder.verify(openRequestedCallback).accept(IOStatusCode.OPEN_SUCCEEDED);
+    inOrder.verify(openRequestedCallback).accept(
+        new IOStatusMessage<>(
+            IOStatusCode.OPEN_SUCCEEDED,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            LOW));
     inOrder.verify(levelConsumer).accept(Level.LOW);
     inOrder.verify(levelConsumer).accept(Level.HIGH);
     inOrder.verifyNoMoreInteractions();
@@ -262,7 +274,12 @@ class InputPinProxyTest {
         StatusScope.INPUT,
         ESP32s2Pin.GPIO_18,
         PullMode.FLOAT);
-    inOrder.verify(callback).accept(IOStatusCode.RESET_SUCCEEDED);
+    inOrder.verify(callback).accept(
+        new IOStatusMessage<>(
+            IOStatusCode.RESET_SUCCEEDED,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            LOW));
     inOrder.verifyNoMoreInteractions();
   }
 
@@ -295,7 +312,12 @@ class InputPinProxyTest {
             ESP32s2Pin.GPIO_18,
             PullMode.FLOAT);
 
-    inOrder.verify(callback).accept(IOStatusCode.RESET_SUCCEEDED);
+    inOrder.verify(callback).accept(
+        new IOStatusMessage<>(
+            IOStatusCode.RESET_SUCCEEDED,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            LOW));
     inOrder.verifyNoMoreInteractions();
   }
 
@@ -327,7 +349,12 @@ class InputPinProxyTest {
         StatusScope.INPUT,
         ESP32s2Pin.GPIO_18,
         PullMode.FLOAT);
-    inOrder.verify(callback).accept(IOStatusCode.RESET_SUCCEEDED);
+    inOrder.verify(callback).accept(
+        new IOStatusMessage<>(
+            IOStatusCode.RESET_SUCCEEDED,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            LOW));
     inOrder.verifyNoMoreInteractions();
   }
 
@@ -359,7 +386,12 @@ class InputPinProxyTest {
         StatusScope.INPUT,
         ESP32s2Pin.GPIO_18,
         PullMode.FLOAT);
-    inOrder.verify(callback).accept(IOStatusCode.RESET_SUCCEEDED);
+    inOrder.verify(callback).accept(
+        new IOStatusMessage<>(
+            IOStatusCode.RESET_SUCCEEDED,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            LOW));
     inOrder.verifyNoMoreInteractions();
   }
 
@@ -391,7 +423,12 @@ class InputPinProxyTest {
         StatusScope.INPUT,
         ESP32s2Pin.GPIO_18,
         PullMode.FLOAT);
-    inOrder.verify(callback).accept(IOStatusCode.RESET_SUCCEEDED);
+    inOrder.verify(callback).accept(
+        new IOStatusMessage<>(
+            IOStatusCode.RESET_SUCCEEDED,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            LOW));
     inOrder.verifyNoMoreInteractions();
 
   }
@@ -416,7 +453,12 @@ class InputPinProxyTest {
 
     // Note that reset() is idempotent, so it has no effect
     // when the pin is waiting for reset status.
-    inOrder.verify(callback).accept(IOStatusCode.RESET_SUCCEEDED);
+    inOrder.verify(callback).accept(
+        new IOStatusMessage<>(
+            IOStatusCode.RESET_SUCCEEDED,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            LOW));
     inOrder.verifyNoMoreInteractions();
   }
 }

@@ -113,7 +113,7 @@ public class GpioInputOutputImpl<T extends Enum<T> & GpioPinNumber>
       T pin,
       PullMode resisterConfiguration,
       Consumer<Level> levelConsumer,
-      Consumer<IOStatusCode> statusCallback) {
+      Consumer<IOStatusMessage<T>> statusCallback) {
     InputPin result = null;
     if (available(pin))  {
       result = inputPinProxies.get(pin).open(resisterConfiguration, levelConsumer, statusCallback);
@@ -122,7 +122,7 @@ public class GpioInputOutputImpl<T extends Enum<T> & GpioPinNumber>
   }
 
   @Override
-  public OutputPin openForOutput(T pin, Consumer<IOStatusCode> statusCallback) {
+  public OutputPin openForOutput(T pin, Consumer<IOStatusMessage<T>> statusCallback) {
     OutputPin result = null;
     if (available(pin)) {
       result = outputPinProxies.get(pin).open(statusCallback);

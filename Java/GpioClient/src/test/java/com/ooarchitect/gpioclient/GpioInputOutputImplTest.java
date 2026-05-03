@@ -55,7 +55,7 @@ class GpioInputOutputImplTest {
   Consumer<Level> levelConsumer;
 
   @Mock
-  Consumer<IOStatusCode> statusConsumer;
+  Consumer<IOStatusMessage<ESP32s2Pin>> statusConsumer;
 
   InOrder inOrder;
 
@@ -124,7 +124,12 @@ class GpioInputOutputImplTest {
       StatusScope scope,
       ESP32s2Pin pin,
       byte sideData) {
-    inOrder.verify(statusConsumer).accept(code);
+    inOrder.verify(statusConsumer).accept(
+        new IOStatusMessage<>(
+            code,
+            scope,
+            pin,
+            sideData));
   }
 
   private void verifyMutationReceived() {
@@ -160,7 +165,7 @@ class GpioInputOutputImplTest {
     for (var pin : ESP32s2Pin.values()) {
       Truth.assertThat(gpioInputOutput.available(pin)).isTrue();
       Truth.assertThat(gpioInputOutput.active(pin)).isFalse();
-      Truth.assertThat(gpioInputOutput.offline(pin)).isFalse();;
+      Truth.assertThat(gpioInputOutput.offline(pin)).isFalse();
     }
   }
 

@@ -28,7 +28,7 @@ public class OutputPinProxy<T extends Enum<T> & GpioPinNumber>
 
   private static final byte LOW = 0;
 
-  private Consumer<IOStatusCode> pendingStatusCodeCallback;
+  private Consumer<IOStatusMessage<T>> pendingStatusCodeCallback;
 
   OutputPinProxy(
       T pinNumber,
@@ -45,7 +45,7 @@ public class OutputPinProxy<T extends Enum<T> & GpioPinNumber>
     return false;
   }
 
-  boolean doOpen(Consumer<IOStatusCode> statusCallback) {
+  boolean doOpen(Consumer<IOStatusMessage<T>> statusCallback) {
     boolean result = false;
     try {
       lock();
@@ -65,7 +65,7 @@ public class OutputPinProxy<T extends Enum<T> & GpioPinNumber>
     return true;
   }
 
-  OutputPin open(Consumer<IOStatusCode> statusCallback) {
+  OutputPin open(Consumer<IOStatusMessage<T>> statusCallback) {
     return doOpen(statusCallback)
         ? new OutputPinImpl<>(this)
         : null;

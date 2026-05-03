@@ -20,7 +20,7 @@
 package com.ooarchitect.gpioclient;
 
 /**
- * Completion status of a input-output operation.
+ * Completion status of an input-output operation.
  *
  * @param <T>            logical pin enumeration for the server's ESP-32
  *                       board

@@ -74,7 +74,7 @@ public interface GpioInputOutput<T extends Enum<T> & GpioPinNumber>  {
       T pin,
       PullMode resisterConfiguration,
       Consumer<Level> levelConsumer,
-      Consumer<IOStatusCode> statusCallback);
+      Consumer<IOStatusMessage<T>> statusCallback);
 
   /**
    * Opens the specified pin for output
@@ -86,7 +86,7 @@ public interface GpioInputOutput<T extends Enum<T> & GpioPinNumber>  {
    */
   OutputPin openForOutput(
       T pin,
-      Consumer<IOStatusCode> statusCallback);
+      Consumer<IOStatusMessage<T>> statusCallback);
 
   /**
    * Builds out the class and starts processing input.

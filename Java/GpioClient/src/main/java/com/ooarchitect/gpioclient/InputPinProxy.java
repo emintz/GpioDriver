@@ -30,12 +30,12 @@ final class InputPinProxy<T extends Enum<T> & GpioPinNumber>
 
   private Level value;
   private Consumer<Level> levelConsumer;
-  private OutputPinConfiguration pendingConfiguration;
+  private OutputPinConfiguration<T> pendingConfiguration;
 
-  private record OutputPinConfiguration(
+  private record OutputPinConfiguration<T extends Enum<T> & GpioPinNumber>(
       PullMode resistorConfiguration,
       Consumer<Level> levelConsumer,
-      Consumer<IOStatusCode> statusCallback) {
+      Consumer<IOStatusMessage<T>> statusCallback) {
   }
 
 
@@ -68,13 +68,13 @@ final class InputPinProxy<T extends Enum<T> & GpioPinNumber>
   boolean doOpen(
       PullMode resistorConfiguration,
       Consumer<Level> levelConsumer,
-      Consumer<IOStatusCode> statusCallback) {
+      Consumer<IOStatusMessage<T>> statusCallback) {
     boolean result = false;
     try {
       lock();
       if (available()) {
         pendingConfiguration =
-            new OutputPinConfiguration(
+            new OutputPinConfiguration<>(
                 resistorConfiguration,
                 levelConsumer,
                 statusCallback);
@@ -105,7 +105,7 @@ final class InputPinProxy<T extends Enum<T> & GpioPinNumber>
   InputPin open(
       PullMode resistorConfiguration,
       Consumer<Level> levelConsumer,
-      Consumer<IOStatusCode> statusCallback) {
+      Consumer<IOStatusMessage<T>> statusCallback) {
     return doOpen(resistorConfiguration, levelConsumer, statusCallback)
         ? new InputPinImpl<>(this)
         : null;
