@@ -117,9 +117,9 @@ class ResponseDispatcher<T extends Enum<T> & GpioPinNumber>
    *
    * <ol>
    *   <li>Start message: {@code oxFF}</li>
-   *   <li>Physical GPIO number</li>
    *   <li>Status code</li>
    *   <li>I/O scope TODO</li>
+   *   <li>Physical GPIO number</li>
    *   <li>Side data</li>
    *   <li>End message: 0xFF</li>
    * </ol>
@@ -132,15 +132,18 @@ class ResponseDispatcher<T extends Enum<T> & GpioPinNumber>
           .add(State.MUTATING, InputType.VALUE, State.MUTATING)
           .add(State.MUTATING, InputType.START_STATUS, State.RECEIVING_STATUS_MESSAGE)
 
-          .add(State.RECEIVING_STATUS_MESSAGE, InputType.VALUE, State.HAVE_PIN_NUMBER)
-
-          .add(State.HAVE_PIN_NUMBER, InputType.VALUE, State.HAVE_PIN_STATUS)
+          .add(State.RECEIVING_STATUS_MESSAGE, InputType.VALUE, State.HAVE_PIN_STATUS)
 
           .add(State.HAVE_PIN_STATUS, InputType.VALUE, State.HAVE_INPUT_OUTPUT_SCOPE)
 
-          .add(State.HAVE_INPUT_OUTPUT_SCOPE, InputType.VALUE, State.HAVE_SIDE_DATA)
-          .add(State.HAVE_INPUT_OUTPUT_SCOPE, InputType.START_STATUS, State.HAVE_SIDE_DATA)
-          .add(State.HAVE_INPUT_OUTPUT_SCOPE, InputType.END_STATUS, State.HAVE_SIDE_DATA)
+          .add(State.HAVE_INPUT_OUTPUT_SCOPE, InputType.VALUE, State.HAVE_PIN_NUMBER)
+
+          // Note: the side data byte can contain any value including 0x7F and
+          //       0xFF, hence the input value-agnostic HAVE_PIN_NUMBER ->
+          //       HAVE_SIDE_DATA transition.
+          .add(State.HAVE_PIN_NUMBER, InputType.VALUE, State.HAVE_SIDE_DATA)
+          .add(State.HAVE_PIN_NUMBER, InputType.START_STATUS, State.HAVE_SIDE_DATA)
+          .add(State.HAVE_PIN_NUMBER, InputType.END_STATUS, State.HAVE_SIDE_DATA)
 
           .add(State.HAVE_SIDE_DATA, InputType.END_STATUS, State.STATUS_RECEIVED)
 

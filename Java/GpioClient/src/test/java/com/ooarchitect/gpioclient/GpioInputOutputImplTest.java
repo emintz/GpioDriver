@@ -87,9 +87,9 @@ class GpioInputOutputImplTest {
       StatusScope scope,
       byte sideData) {
     receiveByte((byte) 0xFF);
-    receiveByte(pin.number());
     receiveByte((byte) statusCode.ordinal());
     receiveByte((byte) scope.ordinal());
+    receiveByte(pin.number());
     receiveByte(sideData);
     receiveByte((byte) 0x7F);
   }

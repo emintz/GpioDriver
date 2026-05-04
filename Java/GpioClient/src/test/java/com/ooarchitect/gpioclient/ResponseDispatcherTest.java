@@ -112,12 +112,12 @@ class ResponseDispatcherTest {
     processOneByte(0xFF);
     Truth.assertThat(handler.currentState())
         .isEqualTo(ResponseDispatcher.State.RECEIVING_STATUS_MESSAGE);
-    processOneByte(18);
-    Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_NUMBER);
     processOneByte(IOStatusCode.OPEN_FAILED.ordinal());
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_STATUS);
     processOneByte(StatusScope.OUTPUT.ordinal());
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_INPUT_OUTPUT_SCOPE);
+    processOneByte(18);
+    Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_NUMBER);
     processOneByte(137);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_SIDE_DATA);
     processOneByte(0x7F);
@@ -137,12 +137,13 @@ class ResponseDispatcherTest {
     processOneByte(0xFF);
     Truth.assertThat(handler.currentState())
         .isEqualTo(ResponseDispatcher.State.RECEIVING_STATUS_MESSAGE);
-    processOneByte(18);
-    Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_NUMBER);
     processOneByte((byte) IOStatusCode.OPEN_FAILED.ordinal());
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_STATUS);
     processOneByte(StatusScope.OUTPUT.ordinal());
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_INPUT_OUTPUT_SCOPE);
+    processOneByte(18);
+    Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_NUMBER);
+
     processOneByte(137);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_SIDE_DATA);
     processOneByte(0x7F);
@@ -162,19 +163,21 @@ class ResponseDispatcherTest {
   public void oneMutationOneStatus() {
     processOneByte(PIN_18_LOW);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.MUTATING);
+
     processOneByte(0xFF);
     Truth.assertThat(handler.currentState())
         .isEqualTo(ResponseDispatcher.State.RECEIVING_STATUS_MESSAGE);
-    processOneByte(18);
-    Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_NUMBER);
     processOneByte(IOStatusCode.OPEN_FAILED.ordinal());
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_STATUS);
     processOneByte(StatusScope.OUTPUT.ordinal());
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_INPUT_OUTPUT_SCOPE);
+    processOneByte(18);
+    Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_NUMBER);
     processOneByte(137);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_SIDE_DATA);
     processOneByte(0x7F);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.STATUS_RECEIVED);
+
     InOrder inOrder = Mockito.inOrder(mutationConsumer, statusConsumer);
     inOrder.verify(mutationConsumer).accept(ESP32s2Pin.GPIO_18, Level.LOW);
     inOrder.verify(statusConsumer).accept(
@@ -276,15 +279,15 @@ class ResponseDispatcherTest {
     processOneByte(0xFF);
     Truth.assertThat(handler.currentState())
         .isEqualTo(ResponseDispatcher.State.RECEIVING_STATUS_MESSAGE);
-    // GPIO Pin, ignored. Must be valid.
-    processOneByte(18);
-    Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_NUMBER);
     // Status
     processOneByte(IOStatusCode.RESET_SUCCEEDED.ordinal());
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_STATUS);
-    // Inpur-Ourpur axopw
+    // Input-Output scope
     processOneByte(StatusScope.OUTPUT.ordinal());
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_INPUT_OUTPUT_SCOPE);
+    // GPIO Pin, ignored. Must be valid.
+    processOneByte(18);
+    Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_NUMBER);
     // Side data, ignored, but useful for verification
     processOneByte(7);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_SIDE_DATA);
@@ -310,15 +313,15 @@ class ResponseDispatcherTest {
     processOneByte(0xFF);
     Truth.assertThat(handler.currentState())
         .isEqualTo(ResponseDispatcher.State.RECEIVING_STATUS_MESSAGE);
-    // GPIO number
-    processOneByte(18);
-    Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_NUMBER);
     // Pin status
     processOneByte(3);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_STATUS);
     // Input-output scope
     processOneByte(StatusScope.OUTPUT.ordinal());
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_INPUT_OUTPUT_SCOPE);
+    // GPIO number
+    processOneByte(18);
+    Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_NUMBER);
     // Side data
     processOneByte(137);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_SIDE_DATA);
@@ -337,8 +340,8 @@ class ResponseDispatcherTest {
     processOneByte(0xFF);
     Truth.assertThat(handler.currentState())
         .isEqualTo(ResponseDispatcher.State.RECEIVING_STATUS_MESSAGE);
-    processOneByte(18);
-    Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_NUMBER);
+    processOneByte(IOStatusCode.RESET_SUCCEEDED.ordinal());
+    Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_STATUS);
     processOneByte(0x7F);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.RECOVERING);
     InOrder inOrder = Mockito.inOrder(mutationConsumer, statusConsumer);
@@ -350,12 +353,12 @@ class ResponseDispatcherTest {
     processOneByte(0xFF);
     Truth.assertThat(handler.currentState())
         .isEqualTo(ResponseDispatcher.State.RECEIVING_STATUS_MESSAGE);
-    processOneByte(18);
-    Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_NUMBER);
     processOneByte(IOStatusCode.OPEN_FAILED.ordinal());
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_STATUS);
     processOneByte(StatusScope.OUTPUT.ordinal());
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_INPUT_OUTPUT_SCOPE);
+    processOneByte(18);
+    Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_NUMBER);
     processOneByte(0x7F);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_SIDE_DATA);
     processOneByte(0x7F);
@@ -373,12 +376,12 @@ class ResponseDispatcherTest {
     processOneByte(0xFF);
     Truth.assertThat(handler.currentState())
         .isEqualTo(ResponseDispatcher.State.RECEIVING_STATUS_MESSAGE);
-    processOneByte(18);
-    Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_NUMBER);
     processOneByte(IOStatusCode.OPEN_FAILED.ordinal());
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_STATUS);
     processOneByte(StatusScope.OUTPUT.ordinal());
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_INPUT_OUTPUT_SCOPE);
+    processOneByte(18);
+    Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_PIN_NUMBER);
     processOneByte(0xFF);
     Truth.assertThat(handler.currentState()).isEqualTo(ResponseDispatcher.State.HAVE_SIDE_DATA);
     processOneByte(0x7F);

@@ -20,6 +20,8 @@
  */
 package com.ooarchitect.gpioclient;
 
+import com.fazecast.jSerialComm.SerialPort;
+
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 
@@ -27,7 +29,9 @@ import java.nio.file.Files;
  * A factory that creates {@link GpioInputOutput} instances
  */
 public class GpioInputOutputBuilder {
+  private static final int BAUD_RATE = 115200;
 
+  private GpioInputOutputBuilder() {}
 
   public static <T extends Enum<T> & GpioPinNumber> GpioInputOutput<T> create(
       Class<T> pinType,
@@ -35,7 +39,24 @@ public class GpioInputOutputBuilder {
     GpioInputOutput<T> ret = null;
     var path = FileSystems.getDefault().getPath(portDescription);
     if (Files.exists(path)) {
-
+      var port = SerialPort.getCommPort(portDescription);
+      port.setComPortParameters(
+          BAUD_RATE,
+          8,
+          SerialPort.ONE_STOP_BIT,
+          SerialPort.NO_PARITY);
+      port.setComPortTimeouts(
+          SerialPort.TIMEOUT_READ_BLOCKING,
+          Integer.MAX_VALUE,
+          Integer.MAX_VALUE);
+      int timeout = port.getReadTimeout();
+      System.out.println("Read timeout : " + timeout + " milliseconds.");
+      if (port.openPort()) {
+        ret = new GpioInputOutputImpl<>(
+            pinType,
+            new Receiver(port),
+            new Transmitter<>(port));
+      }
     }
     return ret;
   }
