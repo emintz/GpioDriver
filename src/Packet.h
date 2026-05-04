@@ -67,9 +67,9 @@ public:
    * status. The wire format is the following byte sequence :
    *
    * 1. `0xFF`, the lead-in code
-   * 2. Physical GPIO number
-   * 3. Status code.
-   * 4. I/O scope
+   * 2. Status code.
+   * 3. I/O scope
+   * 4. Physical GPIO number
    * 5. Status-specific side data. Must be 0 if N/A.
    * 6. `0x7F`, lead-out
    *
