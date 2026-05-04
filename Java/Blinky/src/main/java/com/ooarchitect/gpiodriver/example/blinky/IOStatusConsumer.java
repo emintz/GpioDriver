@@ -1,5 +1,3 @@
-
-
 /*
  * IOStatusConsumer.java
  *
@@ -9,7 +7,7 @@
  * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,5 +18,19 @@
  */
 package com.ooarchitect.gpiodriver.example.blinky;
 
-public class IOStatusConsumer {
+import com.ooarchitect.gpioclient.ESP32s2Pin;
+import com.ooarchitect.gpioclient.IOStatusMessage;
+
+import java.util.function.Consumer;
+
+/**
+ * Server status callback that merely dumps the received
+ * message.
+ */
+public class IOStatusConsumer
+    implements Consumer<IOStatusMessage<ESP32s2Pin>> {
+  @Override
+  public void accept(IOStatusMessage ioStatusMessage) {
+    System.out.println("Server response: " + ioStatusMessage);
+  }
 }

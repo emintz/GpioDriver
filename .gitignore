@@ -1,9 +1,12 @@
 /.cproject
 /Release/
 /sloeber.ino.cpp
+/.pio
 /.project
 /.settings
 /.sproject
+/.vscode
 /DumpStack.sh
+/platformio.ini
 /spec.d
 
