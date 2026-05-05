@@ -92,7 +92,7 @@ public class GpioInputOutputImpl<T extends Enum<T> & GpioPinNumber>
 
   /**
    * If the dispatcher thread exists (i.e. the caller has successfully
-   * invoked {@link #start()}, join the thread and wait indefinitely.
+   * invoked {@link #start()}), join the thread and wait indefinitely.
    * Otherwise, return immediately.
    *
    * @return {@code true} if the thread has been joined, {@code false}
