@@ -51,6 +51,18 @@ public interface GpioInputOutput<T extends Enum<T> & GpioPinNumber>  {
   boolean available(T pin);
 
   /**
+   * If the dispatcher thread exists (i.e. the caller has successfully
+   * invoked {@link #start()}, join the thread and wait indefinitely.
+   * Otherwise, return immediately.
+   *
+   * @return {@code true} if the thread has been joined, {@code false}
+   *         otherwise. Note that a successful return will be delayed
+   *         indefinitely.
+   * @throws InterruptedException if the thread is interrupted.
+   */
+  boolean joinReadThread() throws InterruptedException;
+
+  /**
    * Queries a pin's state. A pin is offline if and only if it is in an
    * invalid state (a.k.a. "wedged"). Note that a pin is either offline
    * or online. An online pin can be either in use or available.

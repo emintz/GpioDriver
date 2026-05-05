@@ -91,6 +91,24 @@ public class GpioInputOutputImpl<T extends Enum<T> & GpioPinNumber>
   }
 
   /**
+   * If the dispatcher thread exists (i.e. the caller has successfully
+   * invoked {@link #start()}, join the thread and wait indefinitely.
+   * Otherwise, return immediately.
+   *
+   * @return {@code true} if the thread has been joined, {@code false}
+   *         otherwise. Note that a successful return will be delayed
+   *         indefinitely.
+   * @throws InterruptedException if the thread is interrupted.
+   */
+  public boolean joinReadThread() throws InterruptedException {
+    boolean result = dispatcherThread != null;
+    if (result) {
+      dispatcherThread.join();
+    }
+    return result;
+  }
+
+  /**
    * Accesses the pin's validity. If the pin is offline, the
    * pin is wedged in an invalid state. Resetting it
    * <em>might</em> make it available, but this is not

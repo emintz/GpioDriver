@@ -48,12 +48,12 @@ public class Blinker implements Runnable {
   public void run() {
     try (ledPin) {
       System.out.println(
-          "Blinker started, waiting for the LED pin to become active.");
-      while(!ledPin.active()) {
+          "Blinker started, waiting for the LED pin to become active or go offline.");
+      while(!ledPin.active() && !ledPin.offline()) {
         Thread.sleep(10);
       }
       System.out.println("LED pin is active.");
-      for (; ; ) {
+      while(ledPin.active()) {
         ledPin.send(Level.HIGH);
         Thread.sleep(500);
         ledPin.send(Level.LOW);
