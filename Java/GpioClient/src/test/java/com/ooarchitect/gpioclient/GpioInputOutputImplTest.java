@@ -40,6 +40,59 @@ import java.util.function.Consumer;
  */
 @ExtendWith(MockitoExtension.class)
 class GpioInputOutputImplTest {
+
+  private static class SynchronousInputOpener implements Runnable{
+    private final GpioInputOutputImpl<ESP32s2Pin> impl;
+    private InputPin inputPin;
+
+    SynchronousInputOpener(GpioInputOutputImpl<ESP32s2Pin> impl) {
+      this.impl = impl;
+      inputPin = null;
+    }
+
+    InputPin pin() {
+      return inputPin;
+    }
+
+    @Override
+    public void run() {
+      try {
+        inputPin = impl.synchronousOpenForInput(
+            ESP32s2Pin.GPIO_18,
+            PullMode.UP,
+            (_) -> {},
+            (_) -> {});
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  private static class SynchronousOutputOpener implements Runnable{
+    private final GpioInputOutputImpl<ESP32s2Pin> impl;
+    private OutputPin outputPin;
+
+    SynchronousOutputOpener(GpioInputOutputImpl<ESP32s2Pin> impl) {
+      this.impl = impl;
+      outputPin = null;
+    }
+
+    OutputPin pin() {
+      return outputPin;
+    }
+
+    @Override
+    public void run() {
+      try {
+        outputPin = impl.synchronousOpenForOutput(
+            ESP32s2Pin.GPIO_18,
+            (_) -> {});
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
   private static final byte LEAD_IN = (byte) 0xFF;
   private static final byte LEAD_OUT = (byte) 0x7F;
   private static final byte PIN_LOW = 0;
@@ -259,7 +312,7 @@ class GpioInputOutputImplTest {
   }
 
   @Test
-  public void openPin19WhileForInputWhileOpenForInput() {
+  public void openPin18WhileForInputWhileOpenForInput() {
     gpioInputOutput.inputPinProxy(ESP32s2Pin.GPIO_18).setState(PinState.ACTIVE);
     Truth.assertThat(gpioInputOutput.active(ESP32s2Pin.GPIO_18)).isTrue();
     Truth.assertThat(gpioInputOutput.openForInput(
@@ -272,7 +325,7 @@ class GpioInputOutputImplTest {
 
 
   @Test
-  public void openPin19WhileForInputWhileOpenForOutput() {
+  public void openPin18WhileForInputWhileOpenForOutput() {
     gpioInputOutput.outputPinProxy(ESP32s2Pin.GPIO_18).setState(PinState.ACTIVE);
     Truth.assertThat(gpioInputOutput.active(ESP32s2Pin.GPIO_18)).isTrue();
     Truth.assertThat(gpioInputOutput.openForInput(
@@ -285,7 +338,7 @@ class GpioInputOutputImplTest {
 
 
   @Test
-  public void openPin19WhileForInputWhileInputOffline() {
+  public void openPin18WhileForInputWhileInputOffline() {
     gpioInputOutput.inputPinProxy(ESP32s2Pin.GPIO_18).setState(PinState.OFFLINE);
     Truth.assertThat(gpioInputOutput.offline(ESP32s2Pin.GPIO_18)).isTrue();
     Truth.assertThat(gpioInputOutput.openForInput(
@@ -298,7 +351,7 @@ class GpioInputOutputImplTest {
 
 
   @Test
-  public void openPin19WhileForInputWhileOutputOffline() {
+  public void openPin18WhileForInputWhileOutputOffline() {
     gpioInputOutput.outputPinProxy(ESP32s2Pin.GPIO_18).setState(PinState.OFFLINE);
     Truth.assertThat(gpioInputOutput.offline(ESP32s2Pin.GPIO_18)).isTrue();
     Truth.assertThat(gpioInputOutput.openForInput(
@@ -406,7 +459,7 @@ class GpioInputOutputImplTest {
   }
 
   @Test
-  public void openPin19WhileForOutputWhileOpenForInput() {
+  public void openPin18WhileForOutputWhileOpenForInput() {
     gpioInputOutput.inputPinProxy(ESP32s2Pin.GPIO_18).setState(PinState.ACTIVE);
     Truth.assertThat(gpioInputOutput.active(ESP32s2Pin.GPIO_18)).isTrue();
     Truth.assertThat(gpioInputOutput.openForOutput(
@@ -417,7 +470,7 @@ class GpioInputOutputImplTest {
 
 
   @Test
-  public void openPin19WhileForOutputWhileOpenForOutput() {
+  public void openPin18WhileForOutputWhileOpenForOutput() {
     gpioInputOutput.outputPinProxy(ESP32s2Pin.GPIO_18).setState(PinState.ACTIVE);
     Truth.assertThat(gpioInputOutput.active(ESP32s2Pin.GPIO_18)).isTrue();
     Truth.assertThat(gpioInputOutput.openForOutput(
@@ -428,7 +481,7 @@ class GpioInputOutputImplTest {
 
 
   @Test
-  public void openPin19WhileForOutputWhileInputOffline() {
+  public void openPin18WhileForOutputWhileInputOffline() {
     gpioInputOutput.inputPinProxy(ESP32s2Pin.GPIO_18).setState(PinState.OFFLINE);
     Truth.assertThat(gpioInputOutput.offline(ESP32s2Pin.GPIO_18)).isTrue();
     Truth.assertThat(gpioInputOutput.openForOutput(
@@ -439,12 +492,117 @@ class GpioInputOutputImplTest {
 
 
   @Test
-  public void openPin19WhileForOutputWhileOutputOffline() {
+  public void openPin18WhileForOutputWhileOutputOffline() {
     gpioInputOutput.outputPinProxy(ESP32s2Pin.GPIO_18).setState(PinState.OFFLINE);
     Truth.assertThat(gpioInputOutput.offline(ESP32s2Pin.GPIO_18)).isTrue();
     Truth.assertThat(gpioInputOutput.openForOutput(
         ESP32s2Pin.GPIO_18,
         statusConsumer)).isNull();
     inOrder.verifyNoMoreInteractions();
+  }
+
+  @Test
+  public void openSynchronouslyForInputOpenSucceeded() throws InterruptedException {
+    var opener = new SynchronousInputOpener(gpioInputOutput);
+    var openerThread = Thread.ofPlatform().name("Opener").start(opener);
+    Thread.sleep(10);
+    receiveStatus(
+        ESP32s2Pin.GPIO_18,
+        IOStatusCode.OPEN_SUCCEEDED,
+        StatusScope.INPUT,
+        PIN_HIGH);
+    openerThread.join();
+    var pin = opener.pin();
+    Truth.assertThat(pin).isNotNull();
+  }
+
+  @Test
+  public void openSynchronouslyForInputOpenFailed() throws InterruptedException {
+    var opener = new SynchronousInputOpener(gpioInputOutput);
+    var openerThread = Thread.ofPlatform().name("Opener").start(opener);
+    Thread.sleep(10);
+    receiveStatus(
+        ESP32s2Pin.GPIO_18,
+        IOStatusCode.OPEN_FAILED,
+        StatusScope.INPUT,
+        PIN_HIGH);
+    openerThread.join();
+    var pin = opener.pin();
+    Truth.assertThat(pin).isNull();
+  }
+
+  @Test
+  public void openSynchronouslyForInputNoSuchPin() throws InterruptedException {
+    var opener = new SynchronousInputOpener(gpioInputOutput);
+    var openerThread = Thread.ofPlatform().name("Opener").start(opener);
+    Thread.sleep(10);
+    receiveStatus(
+        ESP32s2Pin.GPIO_18,
+        IOStatusCode.NO_SUCH_PIN,
+        StatusScope.INPUT,
+        PIN_HIGH);
+    openerThread.join();
+    var pin = opener.pin();
+    Truth.assertThat(pin).isNull();
+  }
+
+  @Test
+  public void openSynchronouslyForInputUnsupported() throws InterruptedException {
+    var opener = new SynchronousInputOpener(gpioInputOutput);
+    var openerThread = Thread.ofPlatform().name("Opener").start(opener);
+    Thread.sleep(10);
+    receiveStatus(
+        ESP32s2Pin.GPIO_18,
+        IOStatusCode.UNSUPPORTED,
+        StatusScope.INPUT,
+        PIN_HIGH);
+    openerThread.join();
+    var pin = opener.pin();
+    Truth.assertThat(pin).isNull();
+  }
+
+  @Test
+  public void openSynchronouslyForOutputOpenSucceeded() throws InterruptedException {
+    var opener = new SynchronousOutputOpener(gpioInputOutput);
+    var openerThread = Thread.ofPlatform().name("Opener").start(opener);
+    Thread.sleep(10);
+    receiveStatus(
+        ESP32s2Pin.GPIO_18,
+        IOStatusCode.OPEN_SUCCEEDED,
+        StatusScope.OUTPUT,
+        PIN_HIGH);
+    openerThread.join();
+    var pin = opener.pin();
+    Truth.assertThat(pin).isNotNull();
+  }
+
+  @Test
+  public void openSynchronouslyForOutputOpenFailed() throws InterruptedException {
+    var opener = new SynchronousOutputOpener(gpioInputOutput);
+    var openerThread = Thread.ofPlatform().name("Opener").start(opener);
+    Thread.sleep(10);
+    receiveStatus(
+        ESP32s2Pin.GPIO_18,
+        IOStatusCode.OPEN_FAILED,
+        StatusScope.OUTPUT,
+        PIN_HIGH);
+    openerThread.join();
+    var pin = opener.pin();
+    Truth.assertThat(pin).isNull();
+  }
+
+  @Test
+  public void openSynchronouslyForOutputUnsupported() throws InterruptedException {
+    var opener = new SynchronousOutputOpener(gpioInputOutput);
+    var openerThread = Thread.ofPlatform().name("Opener").start(opener);
+    Thread.sleep(10);
+    receiveStatus(
+        ESP32s2Pin.GPIO_18,
+        IOStatusCode.UNSUPPORTED,
+        StatusScope.OUTPUT,
+        PIN_HIGH);
+    openerThread.join();
+    var pin = opener.pin();
+    Truth.assertThat(pin).isNull();
   }
 }

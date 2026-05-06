@@ -76,7 +76,7 @@ public interface GpioInputOutput<T extends Enum<T> & GpioPinNumber>  {
    * Opens the specified pin for input
    *
    * @param pin                   the GPIO pin to open
-   * @param resisterConfiguration Pullup/Pulldown resistor configuration
+   * @param resistorConfiguration Pullup/Pulldown resistor configuration
    * @param levelConsumer         Called when the pin level changes
    * @param statusCallback        Called when the pin reports status
    * @return an {@link InputPin} bound to the specified {@code pin} if successful,
@@ -84,7 +84,7 @@ public interface GpioInputOutput<T extends Enum<T> & GpioPinNumber>  {
    */
   InputPin openForInput(
       T pin,
-      PullMode resisterConfiguration,
+      PullMode resistorConfiguration,
       Consumer<Level> levelConsumer,
       Consumer<IOStatusMessage<T>> statusCallback);
 
@@ -107,4 +107,42 @@ public interface GpioInputOutput<T extends Enum<T> & GpioPinNumber>  {
    *         {@code false} otherwise.
    */
   boolean start();
+
+  /**
+   * Open an input pin and wait for confirmation. Return a usable pin if
+   * and only if the open succeeds.
+   *
+   * @param pin the GPIO pin to open for input
+   * @param resistorConfiguration pullup/pulldown resistor
+   * @param levelConsumer consumer that is notified when the pin level changes
+   * @param statusCallback consumer that is notified when the server
+   *                       responds with an operation status
+   * @return a newly opened {@link InputPin} if the open succeeds,
+   *         {@code null} on failure
+   *
+   * @throws InterruptedException when the status wait is interrupted
+   */
+  InputPin synchronousOpenForInput(
+      T pin,
+      PullMode resistorConfiguration,
+      Consumer<Level> levelConsumer,
+      Consumer<IOStatusMessage<T>> statusCallback)
+          throws InterruptedException;
+
+  /**
+   * Open an output pin and wait for confirmation. Return a usable pin if
+   * and only if the open succeeds.
+   *
+   *
+   * @param pin the GPIO pin to open for input
+   * @param statusCallback consumer that is notified when the server
+   *                       responds with an operation status
+   * @return a newly opened {@link OutputPin} if the open succeeds,
+   *         {@code null} on failure
+   * @throws InterruptedException if the status await thread is interrupted
+   */
+  OutputPin synchronousOpenForOutput(
+      T pin,
+      Consumer<IOStatusMessage<T>> statusCallback)
+      throws InterruptedException;
 }

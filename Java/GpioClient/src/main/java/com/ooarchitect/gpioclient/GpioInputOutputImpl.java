@@ -129,12 +129,12 @@ public class GpioInputOutputImpl<T extends Enum<T> & GpioPinNumber>
   @Override
   public InputPin openForInput(
       T pin,
-      PullMode resisterConfiguration,
+      PullMode resistorConfiguration,
       Consumer<Level> levelConsumer,
       Consumer<IOStatusMessage<T>> statusCallback) {
     InputPin result = null;
     if (available(pin))  {
-      result = inputPinProxies.get(pin).open(resisterConfiguration, levelConsumer, statusCallback);
+      result = inputPinProxies.get(pin).open(resistorConfiguration, levelConsumer, statusCallback);
     }
     return result;
   }
@@ -206,6 +206,47 @@ public class GpioInputOutputImpl<T extends Enum<T> & GpioPinNumber>
       ret = false;
     }
     return ret;
+  }
+
+  @Override
+  public InputPin synchronousOpenForInput(
+      T pin,
+      PullMode resistorConfiguration,
+      Consumer<Level> levelConsumer,
+      Consumer<IOStatusMessage<T>> statusCallback)
+          throws InterruptedException {
+    InputPin result = null;
+    if (available(pin))  {
+      var proxy = inputPinProxies.get(pin);
+      try {
+        var screener = new PinScreener<InputPin>();
+        proxy.setTransitionCallback(screener);
+        result = screener.awaitStatus(proxy.open(
+            resistorConfiguration, levelConsumer, statusCallback));
+      } finally {
+        proxy.clearTransitionCallback();
+      }
+    }
+    return result;
+  }
+
+  @Override
+  public OutputPin synchronousOpenForOutput(
+      T pin,
+      Consumer<IOStatusMessage<T>> statusCallback)
+          throws InterruptedException {
+    OutputPin result = null;
+    if (available(pin)) {
+      var proxy = outputPinProxies.get(pin);
+      try {
+        var screener = new PinScreener<OutputPin>();
+        proxy.setTransitionCallback(screener);
+        result = screener.awaitStatus(proxy.open(statusCallback));
+      } finally {
+        proxy.clearTransitionCallback();
+      }
+    }
+    return result;
   }
 
   @VisibleForTesting
