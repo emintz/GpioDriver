@@ -17,11 +17,45 @@ package com.ooarchitect.gpioclient.example.lightfollowingbutton;/*
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import com.google.common.truth.Truth;
+import com.ooarchitect.gpioclient.Level;
+import com.ooarchitect.gpioclient.OutputPin;
+import org.junit.Rule;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- *
+ * Verifies {@link MutationConsumer}
  */
+@ExtendWith(MockitoExtension.class)
 class MutationConsumerTest {
+  @Rule
+  public MockitoRule initRule = MockitoJUnit.rule();
 
+  @Mock
+  private OutputPin ledPin;
+
+  private MutationConsumer consumer;
+
+  @BeforeEach
+  void beforeEach() {
+    consumer = new MutationConsumer(ledPin);
+  }
+
+  @Test
+  void testConsumerLow() {
+    consumer.accept(Level.LOW);
+    Mockito.verify(ledPin).send(Level.LOW);
+  }
+
+  @Test
+  void testConsumerHigh() {
+    consumer.accept(Level.HIGH);
+    Mockito.verify(ledPin).send(Level.HIGH);
+  }
 }

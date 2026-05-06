@@ -20,5 +20,39 @@
  */
 package com.ooarchitect.gpioclient.example.lightfollowingbutton;
 
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+
 public class Main {
+  private static boolean checkArguments(String[] args) {
+    boolean result = args.length == 1;
+    if (!result) {
+      System.err.println("Usage:");
+      System.err.println();
+      System.err.println("   GpioTestApplication <serial port device>");
+      System.err.println();
+      System.err.println("Example:");
+      System.err.println();
+      System.err.println("   GpioTestApplication /dev/ttyUSB1");
+    } else {
+      var path = FileSystems.getDefault().getPath(args[0]);
+      result = Files.exists(path);
+      if (result) {
+        System.out.print("Found serial device: ");
+        System.out.println(args[0]);
+      } else {
+        System.err.println("File not found: " + path);
+      }
+    }
+    return result;
+  }
+
+  public static void main(String[] args) throws Exception {
+    if (checkArguments(args)) {
+      System.out.println("Starting GpioTestApplication to read from: " + args[0]);
+      var follower = new LightFollower(args[0]);
+      follower.start();
+      System.out.println("Stopping. Thank you for using the button follower.");
+    }
+  }
 }

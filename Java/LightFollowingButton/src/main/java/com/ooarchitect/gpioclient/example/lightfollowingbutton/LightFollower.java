@@ -20,5 +20,58 @@
  */
 package com.ooarchitect.gpioclient.example.lightfollowingbutton;
 
+import com.ooarchitect.gpioclient.*;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+
+/**
+ * Class that drives output pin levels from input pins.
+ */
 public class LightFollower {
+
+  private final GpioInputOutput<ESP32s2Pin> gpio;
+
+  public LightFollower(String portDescription) {
+    gpio = GpioInputOutputBuilder.create(
+        ESP32s2Pin.class, portDescription);
+  }
+
+  private InputPin openButtonAndLED(
+      ESP32s2Pin buttonPin,
+      ESP32s2Pin ledPin) {
+    try {
+      var outputPin = gpio.synchronousOpenForOutput(
+          ledPin,
+          (_) -> {});
+      var inputPin = gpio.synchronousOpenForInput(
+          buttonPin, PullMode.UP,
+          new MutationConsumer(outputPin),
+          (_) -> {
+          });
+      outputPin.send(inputPin.value());
+      return inputPin;
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void start() {
+    if (gpio.start()) {
+      ArrayList<InputPin> pins = new ArrayList<>();
+      pins.add(openButtonAndLED(ESP32s2Pin.GPIO_27, ESP32s2Pin.GPIO_2));
+      pins.add(openButtonAndLED(ESP32s2Pin.GPIO_19, ESP32s2Pin.GPIO_12));
+      pins.add(openButtonAndLED(ESP32s2Pin.GPIO_4, ESP32s2Pin.GPIO_14));
+      pins.add(openButtonAndLED(ESP32s2Pin.GPIO_15, ESP32s2Pin.GPIO_13));
+      System.out.println("Press any key to exit.");
+      var keyboard = new InputStreamReader(System.in);
+      try {
+        var keyPressed = keyboard.read();
+        System.out.println("Key pressed: " + keyPressed);
+      } catch (IOException e) {
+        System.out.println("Error reading keyboard, stopping");
+      }
+    }
+  }
 }

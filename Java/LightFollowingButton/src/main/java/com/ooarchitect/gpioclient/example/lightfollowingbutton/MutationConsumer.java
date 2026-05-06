@@ -20,5 +20,27 @@
  */
 package com.ooarchitect.gpioclient.example.lightfollowingbutton;
 
-public class MutationConsumer {
+import com.ooarchitect.gpioclient.Level;
+import com.ooarchitect.gpioclient.OutputPin;
+
+import java.util.function.Consumer;
+
+/**
+ * Receives button events and turns an LED on or off accordingly.
+ * The LED is controlled by an InputPin that is bound at
+ * construction.
+ */
+public class MutationConsumer
+    implements Consumer<Level> {
+
+  private final OutputPin ledPin;
+
+  MutationConsumer(OutputPin ledPin) {
+    this.ledPin = ledPin;
+  }
+
+  @Override
+  public void accept(Level level) {
+    ledPin.send(level);
+  }
 }
