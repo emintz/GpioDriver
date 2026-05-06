@@ -52,7 +52,7 @@ public class OutputPinProxy<T extends Enum<T> & GpioPinNumber>
       pendingStatusCodeCallback = statusCallback;
       result = transition(IOEvent.OPEN_REQUESTED, LOW);
       if (!result) {
-        result = transition(IOEvent.CLOSE_FAILED, LOW);
+        result = transition(IOEvent.OPEN_FAILED, LOW);
       }
     } finally {
       unlock();
