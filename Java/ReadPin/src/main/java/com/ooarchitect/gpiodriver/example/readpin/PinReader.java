@@ -1,5 +1,3 @@
-
-
 /*
  * PinReader.java
  *
