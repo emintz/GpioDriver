@@ -30,6 +30,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.TreeMap;
 import java.util.function.Consumer;
 
 /**
@@ -56,8 +57,12 @@ class OutputPinProxyTest {
 
   private OutputPinProxy<ESP32s2Pin> outputPin;
 
+  private InOrder inorder;
+
   @BeforeEach
   public void beforeEachTest() {
+    inorder = Mockito.inOrder(
+        callback, outputChannel, openRequestedCallback);
     outputPin = new OutputPinProxy<>(
         ESP32s2Pin.GPIO_18,
         outputChannel);
@@ -66,10 +71,9 @@ class OutputPinProxyTest {
 
   @Test
   public void outputFailureOnSend() {
-    var inorder = Mockito.inOrder(callback, outputChannel, openRequestedCallback);
     Mockito.when(outputChannel.sendMutation(Mockito.anyByte())).thenReturn(false);
 
-    // Note that we are faking the openXXX, so we verify callbacks
+    // Note that we are faking the open, so we verify callbacks
     // on the callback installed at construction.
     outputPin.setState(PinState.OPEN_PENDING);
 
@@ -77,12 +81,24 @@ class OutputPinProxyTest {
     Truth.assertThat(outputPin.available()).isFalse();
     Truth.assertThat(outputPin.active()).isTrue();
     Truth.assertThat(outputPin.offline()).isFalse();
-    Truth.assertThat(outputPin.send(Level.LOW)).isFalse();
-    Truth.assertThat(outputPin.send(Level.HIGH)).isFalse();
 
+    Truth.assertThat(outputPin.send(Level.LOW)).isFalse();
+    Truth.assertThat(outputPin.available()).isFalse();
+    Truth.assertThat(outputPin.active()).isTrue();
+    Truth.assertThat(outputPin.offline()).isFalse();
+
+    Truth.assertThat(outputPin.send(Level.HIGH)).isFalse();
+    Truth.assertThat(outputPin.available()).isFalse();
+    Truth.assertThat(outputPin.active()).isTrue();
+    Truth.assertThat(outputPin.offline()).isFalse();
+
+    // The following CLOSE_SUCCEEDED is unexpected and invalid
+    // when the pin is active (which it currently is)
     outputPin.receivePinConfigurationStatus(IOStatusCode.CLOSE_SUCCEEDED, HIGH);
+    Truth.assertThat(outputPin.available()).isFalse();
     Truth.assertThat(outputPin.active()).isFalse();
     Truth.assertThat(outputPin.offline()).isTrue();
+
     inorder.verify(callback).accept(
         new IOStatusMessage<>(
             IOStatusCode.OPEN_SUCCEEDED,
@@ -100,7 +116,6 @@ class OutputPinProxyTest {
     inorder.verifyNoMoreInteractions();
   }
 
-
   @Test
   public void successfulClose() {
     Mockito.when(outputChannel.sendCommand(
@@ -110,10 +125,20 @@ class OutputPinProxyTest {
         PullMode.FLOAT
     )).thenReturn(true);
     outputPin.setState(PinState.ACTIVE);
+    Truth.assertThat(outputPin.available()).isFalse();
+    Truth.assertThat(outputPin.active()).isTrue();
+    Truth.assertThat(outputPin.offline()).isFalse();
+
     Truth.assertThat(outputPin.close()).isTrue();
+    Truth.assertThat(outputPin.available()).isFalse();
+    Truth.assertThat(outputPin.active()).isFalse();
+    Truth.assertThat(outputPin.offline()).isFalse();
+
     outputPin.receivePinConfigurationStatus(IOStatusCode.CLOSE_SUCCEEDED, LOW);
     Truth.assertThat(outputPin.available()).isTrue();
-    InOrder inorder = Mockito.inOrder(callback, outputChannel, openRequestedCallback);
+    Truth.assertThat(outputPin.active()).isFalse();
+    Truth.assertThat(outputPin.offline()).isFalse();
+
     inorder.verify(outputChannel).sendCommand(
         ConfigurationCommandCode.CLOSE,
         StatusScope.OUTPUT,
@@ -136,11 +161,13 @@ class OutputPinProxyTest {
         ESP32s2Pin.GPIO_18,
         PullMode.FLOAT)).thenReturn(true);
     outputPin.setState(PinState.ACTIVE);
+
     Truth.assertThat(outputPin.close()).isTrue();
     outputPin.receivePinConfigurationStatus(IOStatusCode.CLOSE_FAILED, LOW);
     Truth.assertThat(outputPin.available()).isFalse();
+    Truth.assertThat(outputPin.active()).isFalse();
     Truth.assertThat(outputPin.offline()).isTrue();
-    InOrder inorder = Mockito.inOrder(callback, outputChannel, openRequestedCallback);
+
     inorder.verify(outputChannel).sendCommand(
         ConfigurationCommandCode.CLOSE,
         StatusScope.OUTPUT,
@@ -164,13 +191,20 @@ class OutputPinProxyTest {
         PullMode.FLOAT
         )).thenReturn(true);
     outputPin.setState(PinState.OFFLINE);
+    Truth.assertThat(outputPin.available()).isFalse();
+    Truth.assertThat(outputPin.active()).isFalse();
     Truth.assertThat(outputPin.offline()).isTrue();
 
     Truth.assertThat(outputPin.reset()).isTrue();
+    Truth.assertThat(outputPin.available()).isFalse();
+    Truth.assertThat(outputPin.active()).isFalse();
+    Truth.assertThat(outputPin.offline()).isTrue();
+
     outputPin.receivePinConfigurationStatus(IOStatusCode.RESET_SUCCEEDED, (byte) 0);
-    Truth.assertThat(outputPin.offline()).isFalse();
     Truth.assertThat(outputPin.available()).isTrue();
-    InOrder inorder = Mockito.inOrder(callback, outputChannel, openRequestedCallback);
+    Truth.assertThat(outputPin.active()).isFalse();
+    Truth.assertThat(outputPin.offline()).isFalse();
+
     inorder.verify(outputChannel).sendCommand(
         ConfigurationCommandCode.RESET,
         StatusScope.OUTPUT,
@@ -194,11 +228,15 @@ class OutputPinProxyTest {
         PullMode.FLOAT)).thenReturn(true);
     Truth.assertThat(outputPin.available()).isTrue();
     Truth.assertThat(outputPin.doOpen(openRequestedCallback)).isTrue();
+    Truth.assertThat(outputPin.active()).isFalse();
+    Truth.assertThat(outputPin.available()).isFalse();
+    Truth.assertThat(outputPin.offline()).isFalse();
+
     outputPin.receivePinConfigurationStatus(IOStatusCode.OPEN_SUCCEEDED, (byte) 0);
     Truth.assertThat(outputPin.active()).isTrue();
     Truth.assertThat(outputPin.available()).isFalse();
     Truth.assertThat(outputPin.offline()).isFalse();
-    InOrder inorder = Mockito.inOrder(callback, outputChannel, openRequestedCallback);
+
     inorder.verify(outputChannel).sendCommand(
         ConfigurationCommandCode.OPEN,
         StatusScope.OUTPUT,
@@ -221,12 +259,19 @@ class OutputPinProxyTest {
         ESP32s2Pin.GPIO_18,
         PullMode.FLOAT)).thenReturn(true);
     Truth.assertThat(outputPin.available()).isTrue();
+    Truth.assertThat(outputPin.active()).isFalse();
+    Truth.assertThat(outputPin.offline()).isFalse();
+
     Truth.assertThat(outputPin.doOpen(openRequestedCallback)).isTrue();
+    Truth.assertThat(outputPin.active()).isFalse();
+    Truth.assertThat(outputPin.available()).isFalse();
+    Truth.assertThat(outputPin.offline()).isFalse();
+
     outputPin.receivePinConfigurationStatus(IOStatusCode.UNSUPPORTED, (byte) 0);
     Truth.assertThat(outputPin.active()).isFalse();
-    Truth.assertThat(outputPin.available()).isTrue();
-    Truth.assertThat(outputPin.offline()).isFalse();
-    InOrder inorder = Mockito.inOrder(callback, outputChannel, openRequestedCallback);
+    Truth.assertThat(outputPin.available()).isFalse();
+    Truth.assertThat(outputPin.offline()).isTrue();
+
     inorder.verify(outputChannel).sendCommand(
         ConfigurationCommandCode.OPEN,
         StatusScope.OUTPUT,
@@ -256,7 +301,7 @@ class OutputPinProxyTest {
     outputPin.receivePinConfigurationStatus(IOStatusCode.OPEN_SUCCEEDED, (byte) 0);
     Truth.assertThat(pinHandle.active()).isTrue();
     Truth.assertThat(outputPin.offline()).isFalse();
-    InOrder inorder = Mockito.inOrder(callback, outputChannel, openRequestedCallback);
+
     inorder.verify(outputChannel).sendCommand(
         ConfigurationCommandCode.OPEN,
         StatusScope.OUTPUT,
@@ -279,8 +324,14 @@ class OutputPinProxyTest {
         ESP32s2Pin.GPIO_18,
         PullMode.FLOAT)).thenReturn(false);
     Truth.assertThat(outputPin.available()).isTrue();
+    Truth.assertThat(outputPin.active()).isFalse();
+    Truth.assertThat(outputPin.offline()).isFalse();
     var pinHandle = outputPin.open(openRequestedCallback);
+
     Truth.assertThat(pinHandle).isNull();
+    Truth.assertThat(outputPin.available()).isFalse();
+    Truth.assertThat(outputPin.active()).isFalse();
+    Truth.assertThat(outputPin.offline()).isTrue();
   }
 
   @Test
@@ -290,15 +341,20 @@ class OutputPinProxyTest {
         StatusScope.OUTPUT,
         ESP32s2Pin.GPIO_18,
         PullMode.FLOAT)).thenReturn(true);
+
     Truth.assertThat(outputPin.available()).isTrue();
+    Truth.assertThat(outputPin.active()).isFalse();
+    Truth.assertThat(outputPin.offline()).isFalse();
+
     var pinHandle = outputPin.open(openRequestedCallback);
     Truth.assertThat(pinHandle).isNotNull();
     Truth.assertThat(pinHandle.active()).isFalse();
     Truth.assertThat(pinHandle.offline()).isFalse();
+
     outputPin.receivePinConfigurationStatus(IOStatusCode.UNSUPPORTED, (byte) 0);
     Truth.assertThat(pinHandle.active()).isFalse();
-    Truth.assertThat(pinHandle.offline()).isFalse();
-    InOrder inorder = Mockito.inOrder(callback, outputChannel, openRequestedCallback);
+    Truth.assertThat(pinHandle.offline()).isTrue();
+
     inorder.verify(outputChannel).sendCommand(
         ConfigurationCommandCode.OPEN,
         StatusScope.OUTPUT,

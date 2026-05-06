@@ -162,7 +162,9 @@ public abstract class GpioPinProxy<T extends Enum<T> & GpioPinNumber> {
   boolean offline() {
     try {
       lock.lock();
-      return PinState.OFFLINE == state;
+      return
+          PinState.OFFLINE == state
+          || PinState.RESET_PENDING == state;
     } finally {
       lock.unlock();
     }

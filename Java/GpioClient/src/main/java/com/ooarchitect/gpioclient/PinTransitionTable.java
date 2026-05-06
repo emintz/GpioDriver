@@ -47,8 +47,6 @@ public class PinTransitionTable {
       TransitionTable.builder(PinState.OFFLINE, IOEvent.class)
           .add(PinState.INACTIVE, IOEvent.OPEN_REQUESTED, PinState.OPEN_PENDING)
           .add(PinState.OPEN_PENDING, IOEvent.OPEN_SUCCEEDED, PinState.ACTIVE)
-          .add(PinState.OPEN_PENDING, IOEvent.UNSUPPORTED, PinState.INACTIVE)
-          .add(PinState.OPEN_PENDING, IOEvent.PIN_IN_USE, PinState.INACTIVE)
           .add(PinState.ACTIVE, IOEvent.CLOSE_REQUESTED, PinState.CLOSE_PENDING)
           .add(PinState.CLOSE_PENDING, IOEvent.CLOSE_SUCCEEDED, PinState.INACTIVE)
           .add(PinState.INACTIVE, IOEvent.CLOSE_REQUESTED, PinState.RESET_PENDING)

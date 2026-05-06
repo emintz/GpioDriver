@@ -76,6 +76,45 @@ class InputPinProxyTest {
   }
 
   @Test
+  public void failedDoOpen() {
+    Mockito.doReturn(true)
+        .when(outputChannel).sendCommand(
+            ConfigurationCommandCode.OPEN,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            PullMode.UP);
+
+    Truth.assertThat(inputPin.doOpen(
+        PullMode.UP,
+        levelConsumer,
+        openRequestedCallback)).isTrue();
+    Truth.assertThat(inputPin.available()).isFalse();
+    Truth.assertThat(inputPin.active()).isFalse();
+    Truth.assertThat(inputPin.offline()).isFalse();
+    Truth.assertThat(inputPin.getState()).isEqualTo(PinState.OPEN_PENDING);
+
+    Truth.assertThat(inputPin.receivePinConfigurationStatus(
+        IOStatusCode.OPEN_FAILED,
+        HIGH)).isFalse();
+    Truth.assertThat(inputPin.available()).isFalse();
+    Truth.assertThat(inputPin.active()).isFalse();
+    Truth.assertThat(inputPin.offline()).isTrue();
+
+    inOrder.verify(outputChannel).sendCommand(
+        ConfigurationCommandCode.OPEN,
+        StatusScope.INPUT,
+        ESP32s2Pin.GPIO_18,
+        PullMode.UP);
+    inOrder.verify(openRequestedCallback).accept(
+        new IOStatusMessage<>(
+            IOStatusCode.OPEN_FAILED,
+            StatusScope.INPUT,
+            ESP32s2Pin.GPIO_18,
+            HIGH));
+    inOrder.verifyNoMoreInteractions();
+  }
+
+  @Test
   public void successfulDoOpenReceiveCloseCycle() {
     Mockito.doReturn(true)
             .when(outputChannel).sendCommand(
