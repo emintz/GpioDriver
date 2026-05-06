@@ -38,6 +38,7 @@ public abstract class GpioPinProxy<T extends Enum<T> & GpioPinNumber> {
   private final StatusScope scope;
   private final ReentrantLock lock;
   private Consumer<IOStatusMessage<T>>statusCallback;
+  private Consumer<PinState> transitionCallback;
   private PinState state;
 
   /**
@@ -59,6 +60,7 @@ public abstract class GpioPinProxy<T extends Enum<T> & GpioPinNumber> {
     this.lock = new ReentrantLock();
     state = PinState.INACTIVE;
     clearStatusCallback();
+    clearTransitionCallback();
   }
 
   /**
@@ -106,6 +108,10 @@ public abstract class GpioPinProxy<T extends Enum<T> & GpioPinNumber> {
    */
   private void clearStatusCallback() {
     statusCallback = (_)->{};
+  }
+
+  void clearTransitionCallback() {
+    transitionCallback = (_)->{};
   }
 
   boolean close() {
@@ -330,9 +336,18 @@ public abstract class GpioPinProxy<T extends Enum<T> & GpioPinNumber> {
     this.statusCallback = statusCallback;
   }
 
+  /**
+   * Sets the transition callback, allowing the invoker to listen to
+   * state transitions. Not for use by application code.
+   *
+   * @param transitionCallback callback to bind. <em>MUST NOT</em> be {@code null}
+   */
+  void setTransitionCallback(Consumer<PinState> transitionCallback) {
+    this.transitionCallback = transitionCallback;
+  }
+
   private IOStatusMessage<T> toStatusMessage(
-      IOStatusCode code, byte sideData
-  ) {
+      IOStatusCode code, byte sideData) {
     return new IOStatusMessage<>(
         code,
         scope,
@@ -365,6 +380,7 @@ public abstract class GpioPinProxy<T extends Enum<T> & GpioPinNumber> {
         case OFFLINE -> result = goOffline();
         case RESET_PENDING -> result = resetRequested();
       }
+      transitionCallback.accept(state);
       return result;
     } finally {
       lock.unlock();

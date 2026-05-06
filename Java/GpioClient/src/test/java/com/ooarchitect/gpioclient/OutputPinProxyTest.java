@@ -30,7 +30,6 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.TreeMap;
 import java.util.function.Consumer;
 
 /**
@@ -54,6 +53,8 @@ class OutputPinProxyTest {
   private Consumer<IOStatusMessage<ESP32s2Pin>> openRequestedCallback;
   @Mock
   private Transmitter<ESP32s2Pin> outputChannel;
+  @Mock
+  private Consumer<PinState> transitionCallback;
 
   private OutputPinProxy<ESP32s2Pin> outputPin;
 
@@ -62,7 +63,7 @@ class OutputPinProxyTest {
   @BeforeEach
   public void beforeEachTest() {
     inorder = Mockito.inOrder(
-        callback, outputChannel, openRequestedCallback);
+        callback, outputChannel, openRequestedCallback, transitionCallback);
     outputPin = new OutputPinProxy<>(
         ESP32s2Pin.GPIO_18,
         outputChannel);
@@ -227,6 +228,10 @@ class OutputPinProxyTest {
         ESP32s2Pin.GPIO_18,
         PullMode.FLOAT)).thenReturn(true);
     Truth.assertThat(outputPin.available()).isTrue();
+    Truth.assertThat(outputPin.active()).isFalse();
+    Truth.assertThat(outputPin.offline()).isFalse();
+    outputPin.setTransitionCallback(transitionCallback);
+
     Truth.assertThat(outputPin.doOpen(openRequestedCallback)).isTrue();
     Truth.assertThat(outputPin.active()).isFalse();
     Truth.assertThat(outputPin.available()).isFalse();
@@ -242,9 +247,49 @@ class OutputPinProxyTest {
         StatusScope.OUTPUT,
         ESP32s2Pin.GPIO_18,
         PullMode.FLOAT);
+    inorder.verify(transitionCallback).accept(PinState.OPEN_PENDING);
+    inorder.verify(transitionCallback).accept(PinState.ACTIVE);
     inorder.verify(openRequestedCallback).accept(
         new IOStatusMessage<>(
             IOStatusCode.OPEN_SUCCEEDED,
+            StatusScope.OUTPUT,
+            ESP32s2Pin.GPIO_18,
+            LOW));
+    inorder.verifyNoMoreInteractions();
+  }
+
+  @Test
+  public void failedDoOpen() {
+    Mockito.when(outputChannel.sendCommand(
+        ConfigurationCommandCode.OPEN,
+        StatusScope.OUTPUT,
+        ESP32s2Pin.GPIO_18,
+        PullMode.FLOAT)).thenReturn(true);
+    Truth.assertThat(outputPin.available()).isTrue();
+    Truth.assertThat(outputPin.active()).isFalse();
+    Truth.assertThat(outputPin.offline()).isFalse();
+    outputPin.setTransitionCallback(transitionCallback);
+
+    Truth.assertThat(outputPin.doOpen(openRequestedCallback)).isTrue();
+    Truth.assertThat(outputPin.active()).isFalse();
+    Truth.assertThat(outputPin.available()).isFalse();
+    Truth.assertThat(outputPin.offline()).isFalse();
+
+    outputPin.receivePinConfigurationStatus(IOStatusCode.OPEN_FAILED, (byte) 0);
+    Truth.assertThat(outputPin.active()).isFalse();
+    Truth.assertThat(outputPin.available()).isFalse();
+    Truth.assertThat(outputPin.offline()).isTrue();
+
+    inorder.verify(outputChannel).sendCommand(
+        ConfigurationCommandCode.OPEN,
+        StatusScope.OUTPUT,
+        ESP32s2Pin.GPIO_18,
+        PullMode.FLOAT);
+    inorder.verify(transitionCallback).accept(PinState.OPEN_PENDING);
+    inorder.verify(transitionCallback).accept(PinState.OFFLINE);
+    inorder.verify(openRequestedCallback).accept(
+        new IOStatusMessage<>(
+            IOStatusCode.OPEN_FAILED,
             StatusScope.OUTPUT,
             ESP32s2Pin.GPIO_18,
             LOW));
@@ -261,6 +306,7 @@ class OutputPinProxyTest {
     Truth.assertThat(outputPin.available()).isTrue();
     Truth.assertThat(outputPin.active()).isFalse();
     Truth.assertThat(outputPin.offline()).isFalse();
+    outputPin.setTransitionCallback(transitionCallback);
 
     Truth.assertThat(outputPin.doOpen(openRequestedCallback)).isTrue();
     Truth.assertThat(outputPin.active()).isFalse();
@@ -277,6 +323,8 @@ class OutputPinProxyTest {
         StatusScope.OUTPUT,
         ESP32s2Pin.GPIO_18,
         PullMode.FLOAT);
+    inorder.verify(transitionCallback).accept(PinState.OPEN_PENDING);
+    inorder.verify(transitionCallback).accept(PinState.OFFLINE);
     inorder.verify(openRequestedCallback).accept(
         new IOStatusMessage<>(
         IOStatusCode.UNSUPPORTED,
