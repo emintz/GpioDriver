@@ -300,7 +300,7 @@ class InputPinProxyTest {
     Truth.assertThat(inputPin.reset()).isTrue();
     Truth.assertThat(inputPin.available()).isFalse();
     Truth.assertThat(inputPin.active()).isFalse();
-    Truth.assertThat(inputPin.offline()).isFalse();
+    Truth.assertThat(inputPin.offline()).isTrue();
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.RESET_PENDING);
     Truth.assertThat(inputPin.value()).isEqualTo(Level.LOW);
 
@@ -337,7 +337,7 @@ class InputPinProxyTest {
     Truth.assertThat(inputPin.reset()).isTrue();
     Truth.assertThat(inputPin.available()).isFalse();
     Truth.assertThat(inputPin.active()).isFalse();
-    Truth.assertThat(inputPin.offline()).isFalse();
+    Truth.assertThat(inputPin.offline()).isTrue();
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.RESET_PENDING);
     Truth.assertThat(inputPin.value()).isEqualTo(Level.LOW);
 
@@ -375,7 +375,7 @@ class InputPinProxyTest {
     Truth.assertThat(inputPin.reset()).isTrue();
     Truth.assertThat(inputPin.available()).isFalse();
     Truth.assertThat(inputPin.active()).isFalse();
-    Truth.assertThat(inputPin.offline()).isFalse();
+    Truth.assertThat(inputPin.offline()).isTrue();
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.RESET_PENDING);
     Truth.assertThat(inputPin.value()).isEqualTo(Level.LOW);
 
@@ -412,7 +412,7 @@ class InputPinProxyTest {
     Truth.assertThat(inputPin.reset()).isTrue();
     Truth.assertThat(inputPin.available()).isFalse();
     Truth.assertThat(inputPin.active()).isFalse();
-    Truth.assertThat(inputPin.offline()).isFalse();
+    Truth.assertThat(inputPin.offline()).isTrue();
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.RESET_PENDING);
     Truth.assertThat(inputPin.value()).isEqualTo(Level.LOW);
 
@@ -449,7 +449,7 @@ class InputPinProxyTest {
     Truth.assertThat(inputPin.reset()).isTrue();
     Truth.assertThat(inputPin.available()).isFalse();
     Truth.assertThat(inputPin.active()).isFalse();
-    Truth.assertThat(inputPin.offline()).isFalse();
+    Truth.assertThat(inputPin.offline()).isTrue();
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.RESET_PENDING);
     Truth.assertThat(inputPin.value()).isEqualTo(Level.LOW);
 
@@ -482,7 +482,7 @@ class InputPinProxyTest {
     Truth.assertThat(inputPin.reset()).isTrue();
     Truth.assertThat(inputPin.available()).isFalse();
     Truth.assertThat(inputPin.active()).isFalse();
-    Truth.assertThat(inputPin.offline()).isFalse();
+    Truth.assertThat(inputPin.offline()).isTrue();
     Truth.assertThat(inputPin.getState()).isEqualTo(PinState.RESET_PENDING);
     Truth.assertThat(inputPin.value()).isEqualTo(Level.LOW);
 
