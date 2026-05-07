@@ -162,11 +162,7 @@ public:
    *
    * @return `true` on success, `false` on failure.
    */
-  bool reset(gpio_num_t pin_number) {
-    return
-        valid(pin_number)
-        && pins_.at(pin_number)->reset();
-  }
+  bool reset(gpio_num_t pin_number);
 
   bool valid(gpio_num_t pin_number);
 };

@@ -81,3 +81,13 @@ void OutputPinHandler::mutate(uint8_t mutation) {
   }
 }
 
+bool OutputPinHandler::reset(gpio_num_t pin_number) {
+  auto status =
+      valid(pin_number)
+      && pins_.at(pin_number)->reset();
+  send_output_status(
+      status ? IOStatus::RESET_SUCCEEDED : IOStatus::RESET_FAILED,
+      pin_number);
+  return status;
+}
+

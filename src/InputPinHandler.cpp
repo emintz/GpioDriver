@@ -83,7 +83,11 @@ bool InputPinHandler::open_pin(
 }
 
 bool InputPinHandler::reset(gpio_num_t pin_number) {
-  return
+  auto result =
       valid(pin_number)
       && pins_.at(pin_number)->reset();
+  send_input_status(
+      result ? IOStatus::RESET_SUCCEEDED : IOStatus::RESET_FAILED,
+          pin_number);
+  return result;
 }
